@@ -171,7 +171,7 @@ export default function PreviewPanel({ fields, sessionId }) {
         <div className="flex items-center justify-between gap-2">
           <div className="font-serif text-[0.92rem] text-text">Technology Infrastructure Request</div>
           <div className="font-mono text-[0.6rem] text-text-muted bg-surface-tertiary px-2 py-0.5 rounded-sm border border-border">
-            {submitted || 'ARB-DRAFT'}
+            {submitted || 'SUBMISSION PROGRESS'}
           </div>
         </div>
         <div className="flex items-center gap-2.5 mt-2.5">
