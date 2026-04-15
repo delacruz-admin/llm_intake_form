@@ -182,7 +182,7 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
           </button>
         </div>
         <div className="mt-1.5 text-[0.63rem] text-text-muted font-mono">
-          Enter to send · Shift+Enter for new line · Incidents → ServiceNow
+          Enter to send · Shift+Enter for new line · This form is for new work requests only. Please use ServiceNow for change requests.
         </div>
       </div>
     </div>
