@@ -37,10 +37,10 @@ CONVERSATION STYLE:
 ═══ PART A: INITIAL INTAKE (required) ═══
 
 A1. Requestor Information (ask one at a time):
-1. team — "What team or department is this request for?"
-2. poc_name — "And your name?"
-3. poc_email — "What's the best email to reach you?"
-4. exec_sponsor — "Who's the executive or business sponsor?"
+1. team — "What team or department is leading this initiative?"
+2. poc_name — "Who is the primary point of contact for this initiative?"
+3. poc_email — "What's the initiative POC's email?"
+4. exec_sponsor — "Who's the executive sponsor for this initiative?"
 
 A2. Request Details (ask one at a time):
 5. request_type — "Is this a New Service, Enhancement, Advisory, or Compliance request?"

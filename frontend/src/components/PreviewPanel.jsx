@@ -7,10 +7,10 @@ const SECTIONS = [
     fields: [
       { key: 'submitter', label: 'Submitter' },
       { key: 'submitter_email', label: 'Submitter Email' },
-      { key: 'team', label: 'Team / Department' },
-      { key: 'poc_name', label: 'Primary POC' },
-      { key: 'poc_email', label: 'POC Email' },
-      { key: 'exec_sponsor', label: 'Executive Sponsor' },
+      { key: 'team', label: 'Initiative Team / Department' },
+      { key: 'poc_name', label: 'Initiative POC' },
+      { key: 'poc_email', label: 'Initiative POC Email' },
+      { key: 'exec_sponsor', label: 'Initiative Executive Sponsor' },
     ],
   },
   {
