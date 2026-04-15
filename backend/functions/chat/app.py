@@ -11,7 +11,7 @@ import time
 import boto3
 from datetime import datetime
 
-TABLE_NAME = os.environ["TABLE_NAME"]
+TABLE_NAME = os.environ["SESSIONS_TABLE"]
 MODEL_ID = os.environ["BEDROCK_MODEL_ID"]
 
 dynamodb = boto3.resource("dynamodb")

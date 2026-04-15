@@ -31,8 +31,8 @@ resource "aws_iam_role_policy" "chat_lambda" {
           "dynamodb:Query",
         ]
         Resource = [
-          aws_dynamodb_table.intake.arn,
-          "${aws_dynamodb_table.intake.arn}/index/*",
+          aws_dynamodb_table.sessions.arn,
+          "${aws_dynamodb_table.sessions.arn}/index/*",
         ]
       },
       {
@@ -88,8 +88,18 @@ resource "aws_iam_role_policy" "requests_lambda" {
           "dynamodb:Scan",
         ]
         Resource = [
-          aws_dynamodb_table.intake.arn,
-          "${aws_dynamodb_table.intake.arn}/index/*",
+          aws_dynamodb_table.requests.arn,
+          "${aws_dynamodb_table.requests.arn}/index/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:Query",
+        ]
+        Resource = [
+          aws_dynamodb_table.sessions.arn,
         ]
       },
       {
@@ -133,7 +143,7 @@ resource "aws_lambda_function" "chat" {
 
   environment {
     variables = {
-      TABLE_NAME       = aws_dynamodb_table.intake.name
+      SESSIONS_TABLE   = aws_dynamodb_table.sessions.name
       BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
@@ -153,7 +163,8 @@ resource "aws_lambda_function" "requests" {
 
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.intake.name
+      REQUESTS_TABLE = aws_dynamodb_table.requests.name
+      SESSIONS_TABLE = aws_dynamodb_table.sessions.name
     }
   }
 

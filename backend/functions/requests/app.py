@@ -10,10 +10,12 @@ import time
 import boto3
 from datetime import datetime
 
-TABLE_NAME = os.environ["TABLE_NAME"]
+REQUESTS_TABLE = os.environ["REQUESTS_TABLE"]
+SESSIONS_TABLE = os.environ["SESSIONS_TABLE"]
 
 dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(TABLE_NAME)
+requests_table = dynamodb.Table(REQUESTS_TABLE)
+sessions_table = dynamodb.Table(SESSIONS_TABLE)
 
 
 def handler(event, context):
@@ -52,7 +54,7 @@ def submit_request(event):
         return _response(400, {"error": "session_id is required"})
 
     # Retrieve extracted fields from the session
-    fields_item = table.get_item(
+    fields_item = sessions_table.get_item(
         Key={"PK": f"SESSION#{session_id}", "SK": "FIELDS"}
     ).get("Item", {})
 
@@ -91,7 +93,7 @@ def submit_request(event):
         "discovery_stakeholders": fields_item.get("discovery_stakeholders", ""),
     }
 
-    table.put_item(Item=request_data)
+    requests_table.put_item(Item=request_data)
 
     return _response(201, {
         "request_id": request_id,
@@ -102,7 +104,7 @@ def submit_request(event):
 
 def get_request(request_id):
     """Get a single request by ID."""
-    result = table.get_item(
+    result = requests_table.get_item(
         Key={"PK": f"REQUEST#{request_id}", "SK": "META"}
     )
     item = result.get("Item")
@@ -123,7 +125,7 @@ def list_requests(event):
     params = event.get("queryStringParameters") or {}
     status_filter = params.get("status", "")
 
-    response = table.query(
+    response = requests_table.query(
         IndexName="GSI1",
         KeyConditionExpression="GSI1PK = :pk"
         + (" AND begins_with(GSI1SK, :sk)" if status_filter else ""),
@@ -195,7 +197,7 @@ def update_request(request_id, event):
         update_parts.append("GSI1SK = :gsi1sk")
         attr_values[":gsi1sk"] = f"STATUS#{allowed['status']}#{allowed['updated_at']}"
 
-    table.update_item(
+    requests_table.update_item(
         Key={"PK": f"REQUEST#{request_id}", "SK": "META"},
         UpdateExpression="SET " + ", ".join(update_parts),
         ExpressionAttributeNames=attr_names,
@@ -222,7 +224,7 @@ def add_note(request_id, event):
     now = datetime.utcnow().isoformat()
     note_id = uuid.uuid4().hex[:8]
 
-    table.put_item(
+    requests_table.put_item(
         Item={
             "PK": f"REQUEST#{request_id}",
             "SK": f"NOTE#{now}#{note_id}",
@@ -241,7 +243,7 @@ def add_note(request_id, event):
 
 def get_notes(request_id):
     """Get all triage notes for a request."""
-    response = table.query(
+    response = requests_table.query(
         KeyConditionExpression="PK = :pk AND begins_with(SK, :sk)",
         ExpressionAttributeValues={
             ":pk": f"REQUEST#{request_id}",
