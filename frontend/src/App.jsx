@@ -19,6 +19,15 @@ export default function App() {
 
     if (getToken()) {
       setAuthenticated(true);
+      // Auto-fill submitter from logged-in user
+      const u = getUser();
+      if (u) {
+        setFields((prev) => ({
+          ...prev,
+          submitter: u.name || '',
+          submitter_email: u.email || '',
+        }));
+      }
     } else {
       requireAuth();
     }

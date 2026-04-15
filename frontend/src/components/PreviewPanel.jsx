@@ -5,6 +5,8 @@ const SECTIONS = [
   {
     id: 'A1', icon: '👤', label: 'A1 · Requestor Information',
     fields: [
+      { key: 'submitter', label: 'Submitter' },
+      { key: 'submitter_email', label: 'Submitter Email' },
       { key: 'team', label: 'Team / Department' },
       { key: 'poc_name', label: 'Primary POC' },
       { key: 'poc_email', label: 'POC Email' },
@@ -144,7 +146,7 @@ export default function PreviewPanel({ fields, sessionId }) {
     if (!sessionId || submitting) return;
     setSubmitting(true);
     try {
-      const data = await submitRequest(sessionId);
+      const data = await submitRequest(sessionId, fields.submitter || '', fields.submitter_email || '');
       setSubmitted(data.request_id);
       setToast('Intake submitted to ARB queue. Triage within 3 business days.');
       setTimeout(() => setToast(''), 4000);

@@ -50,10 +50,10 @@ export function sendChatMessage(sessionId, message, user = null) {
 }
 
 /** Submit a completed intake to the ARB queue. */
-export function submitRequest(sessionId) {
+export function submitRequest(sessionId, submitter = '', submitterEmail = '') {
   return request('/requests', {
     method: 'POST',
-    body: JSON.stringify({ session_id: sessionId }),
+    body: JSON.stringify({ session_id: sessionId, submitter, submitter_email: submitterEmail }),
   });
 }
 

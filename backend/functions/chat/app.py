@@ -232,7 +232,7 @@ def handler(event, context):
         # Build user context for the system prompt
         user_context = ""
         if user_name or user_email:
-            user_context = f"\n\nLOGGED-IN USER: {user_name} ({user_email}). This user is the requestor. Automatically set poc_name to '{user_name}' and poc_email to '{user_email}' in your very first extracted_fields output. Do NOT ask the user for their name or email — you already have it. Skip questions 2 and 3 entirely. If the user says 'me', 'myself', or similar self-references for any field, resolve it to this person's name and/or email."
+            user_context = f"\n\nLOGGED-IN USER: {user_name} ({user_email}). This user is the submitter (already captured automatically). The Primary POC may be a different person if the submitter is filling out the form on someone else's behalf. Always ask for the POC name and email — do NOT skip those questions. If the user says 'me', 'myself', or similar self-references for any field, resolve it to '{user_name}' and/or '{user_email}'."
 
         # Load conversation history
         messages = get_session_messages(session_id)

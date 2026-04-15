@@ -49,6 +49,8 @@ def submit_request(event):
     """Create a new intake request from a completed chat session."""
     body = json.loads(event.get("body", "{}"))
     session_id = body.get("session_id", "")
+    submitter = body.get("submitter", "")
+    submitter_email = body.get("submitter_email", "")
 
     if not session_id:
         return _response(400, {"error": "session_id is required"})
@@ -76,6 +78,9 @@ def submit_request(event):
         "status": "submitted",
         "created_at": now,
         "updated_at": now,
+        # Submitter (from login)
+        "submitter": submitter,
+        "submitter_email": submitter_email,
         # Copy fields from session
         "team": fields_item.get("team", ""),
         "poc_name": fields_item.get("poc_name", ""),
