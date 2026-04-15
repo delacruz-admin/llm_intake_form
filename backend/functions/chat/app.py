@@ -49,6 +49,17 @@ AFTER EACH USER RESPONSE, output a JSON block with any fields you extracted:
 </extracted_fields>
 Only include fields that were actually mentioned. Use null for fields explicitly stated as none/N/A.
 
+FIELD FORMATTING RULES (apply before outputting extracted_fields):
+- Fix spelling and grammar errors in the user's input.
+- Capitalize proper nouns, team names, and people's names correctly.
+- Use title case for titles and team names (e.g., "data science" → "Data Science & Engineering").
+- Format email addresses as lowercase.
+- Format dates as YYYY-MM-DD (e.g., "end of june" → "2026-06-30", "next friday" → the actual date).
+- Clean up descriptions into clear, professional sentences. Don't change the meaning, just polish.
+- For criticality, normalize to exactly: Emergency, High, Medium, or Low.
+- For request_type, normalize to exactly: New Service, Enhancement, Advisory, or Compliance.
+- For app_type, normalize to the closest match: Full Stack, Web, API, Microservice, ETL Pipeline, ML Workload, Batch, or Other.
+
 VALID VALUES:
 - request_type: New Service, Enhancement, Advisory, Compliance
 - criticality: Emergency, High, Medium, Low
