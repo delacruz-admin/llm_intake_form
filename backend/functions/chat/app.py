@@ -60,6 +60,8 @@ FIELD FORMATTING RULES (apply before outputting extracted_fields):
 - For request_type, normalize to exactly: New Service, Enhancement, Advisory, or Compliance.
 - For app_type, normalize to the closest match: Full Stack, Web, API, Microservice, ETL Pipeline, ML Workload, Batch, or Other.
 
+CRITICAL: You MUST include the <extracted_fields> block in EVERY response where the user provides information — even partial info. This is how the form gets populated. Never skip it. If the user's message contains any field data at all, output the block.
+
 VALID VALUES:
 - request_type: New Service, Enhancement, Advisory, Compliance
 - criticality: Emergency, High, Medium, Low
@@ -176,9 +178,11 @@ def handler(event, context):
 
         # Call Bedrock
         assistant_text = call_bedrock(messages)
+        print(f"Bedrock response: {assistant_text[:500]}")
 
         # Extract structured fields
         fields = extract_fields_from_response(assistant_text)
+        print(f"Extracted fields: {fields}")
         if fields:
             save_extracted_fields(session_id, fields)
 
