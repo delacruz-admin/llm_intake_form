@@ -14,9 +14,6 @@ export default function Navbar({ user, onLogout, page, onNavigate }) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="font-mono text-[0.6rem] font-medium text-cooley-red bg-cooley-red-light border border-cooley-red-mid px-2 py-0.5 rounded-sm tracking-wide">
-          AI-Assisted
-        </span>
         {page !== 'intake' && (
           <button
             onClick={() => onNavigate('intake')}
