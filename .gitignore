@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+
+# Terraform
+infra/.terraform/
+infra/.build/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl
+infra/terraform.tfvars
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

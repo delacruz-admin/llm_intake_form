@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARB Intake Dashboard — Cooley Technology Infrastructure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:       #C8102E;
+  --red-hover: #a80d24;
+  --red-light: #fef2f4;
+  --red-mid:   #f0c0c8;
+  --bg:        #FFFFFF;
+  --bg2:       #F6F6F6;
+  --bg3:       #EBEBEB;
+  --border:    #DCDCDC;
+  --border2:   #C4C4C4;
+  --text:      #1C1C1C;
+  --text-dim:  #5A5A5A;
+  --muted:     #9A9A9A;
+  --green:     #1A6E34;
+  --green-bg:  #EBF5EE;
+  --green-bd:  #86EFAC;
+  --yellow:    #7A5C00;
+  --yellow-bg: #FFFBEB;
+  --orange:    #92400E;
+  --orange-bg: #FFF7ED;
+  --blue:      #1E4D8C;
+  --blue-bg:   #EFF6FF;
+  --radius:    6px;
+  --font-sans:  "Inter", system-ui, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono:  "Fira Code", monospace;
+}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg2);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+a{color:var(--red);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;background:#FFF;border-bottom:2px solid var(--red)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:1380px;margin:0 auto;padding:0 2rem}
+.nav-left{display:flex;align-items:center;gap:1.1rem}
+.nav-divider{width:1px;height:22px;background:var(--border)}
+.nav-title{font-size:0.8rem;font-weight:600;color:var(--text);line-height:1.2}
+.nav-subtitle{font-size:0.67rem;color:var(--muted)}
+.nav-right{display:flex;align-items:center;gap:1rem}
+.nav-sync{font-family:var(--font-mono);font-size:0.63rem;color:var(--muted)}
+.nav-btn{font-size:0.74rem;font-weight:600;color:#FFF;background:var(--red);border:none;border-radius:var(--radius);padding:0.3rem 0.85rem;cursor:pointer;transition:background 0.15s;text-decoration:none;display:inline-block}
+.nav-btn:hover{background:var(--red-hover);text-decoration:none;color:#FFF}
+
+/* LAYOUT */
+.container{max-width:1380px;margin:0 auto;padding:0 2rem}
+section{padding:1.75rem 0}
+
+/* PAGE HEADER */
+.page-header{background:#FFF;border-bottom:1px solid var(--border);padding:1.5rem 0}
+.page-eyebrow{font-size:0.63rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--red);margin-bottom:0.25rem}
+.page-title{font-family:var(--font-serif);font-size:1.5rem;font-weight:normal;color:var(--text);margin-bottom:0.15rem}
+.page-sub{font-size:0.8rem;color:var(--muted)}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:0.85rem;margin-top:1.5rem}
+.stat-card{background:#FFF;border:1px solid var(--border);border-top:3px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem;cursor:pointer;transition:border-color 0.2s,transform 0.15s}
+.stat-card:hover{transform:translateY(-1px);box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.stat-card.active-filter{border-top-color:var(--red)!important;box-shadow:0 2px 12px rgba(200,16,46,0.08)}
+.stat-num{font-size:1.5rem;font-weight:700;line-height:1;margin-bottom:0.15rem}
+.stat-label{font-size:0.63rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted)}
+.stat-sub{font-size:0.7rem;color:var(--text-dim);margin-top:0.1rem}
+.s-all .stat-num{color:var(--text)}
+.s-new .stat-num{color:var(--muted)}
+.s-new{border-top-color:var(--border2)}
+.s-triage .stat-num{color:var(--orange)}
+.s-triage{border-top-color:#F97316}
+.s-disc .stat-num{color:var(--yellow)}
+.s-disc{border-top-color:#EAB308}
+.s-prog .stat-num{color:var(--blue)}
+.s-prog{border-top-color:#3B82F6}
+.s-done .stat-num{color:var(--green)}
+.s-done{border-top-color:#22C55E}
+
+/* SECTION HEADERS */
+.sec-eyebrow{font-size:0.63rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--red);margin-bottom:0.2rem}
+.sec-title{font-family:var(--font-serif);font-size:1.05rem;font-weight:normal;color:var(--text);margin-bottom:0.15rem}
+.sec-sub{font-size:0.78rem;color:var(--muted)}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;padding:1rem 0 1.25rem;border-bottom:1px solid var(--border)}
+.filter-label{font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);white-space:nowrap}
+select.filter-select{background:#FFF;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-dim);font-family:var(--font-sans);font-size:0.76rem;padding:0.28rem 0.65rem;cursor:pointer;transition:border-color 0.2s;-webkit-appearance:none}
+select.filter-select:focus{outline:none;border-color:var(--red)}
+.search-wrap{flex:1;min-width:180px;max-width:260px;position:relative}
+.search-icon{position:absolute;left:0.65rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.78rem;pointer-events:none}
+input#searchInput{width:100%;background:#FFF;border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-sans);font-size:0.78rem;padding:0.3rem 0.85rem 0.3rem 1.85rem;transition:border-color 0.2s}
+input#searchInput:focus{outline:none;border-color:var(--red)}
+input#searchInput::placeholder{color:var(--muted)}
+.filter-reset{font-family:var(--font-sans);font-size:0.72rem;font-weight:500;color:var(--muted);background:none;cursor:pointer;padding:0.28rem 0.65rem;border:1px solid var(--border);border-radius:var(--radius);transition:color 0.15s,border-color 0.15s}
+.filter-reset:hover{color:var(--red);border-color:var(--red-mid)}
+.result-count{font-family:var(--font-mono);font-size:0.63rem;color:var(--muted);margin-left:auto}
+
+/* PRIORITY CARDS */
+.priority-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.85rem;margin-top:1rem}
+.req-card{background:#FFF;border:1px solid var(--border);border-left:3px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.2rem;transition:box-shadow 0.15s,transform 0.15s;cursor:pointer}
+.req-card.emergency{border-left-color:#DC2626}
+.req-card.high{border-left-color:#CA8A04}
+.req-card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;margin-bottom:0.45rem}
+.card-id{font-family:var(--font-mono);font-size:0.62rem;color:var(--muted)}
+.card-title{font-size:0.88rem;font-weight:600;color:var(--text);line-height:1.3;margin-bottom:0.35rem}
+.card-desc{font-size:0.78rem;color:var(--text-dim);line-height:1.55;margin-bottom:0.65rem}
+.card-meta{display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap}
+.card-team{font-size:0.68rem;color:var(--text-dim);background:var(--bg2);padding:0.1rem 0.45rem;border-radius:3px;border:1px solid var(--border)}
+.card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:0.65rem;padding-top:0.6rem;border-top:1px solid var(--border)}
+.card-assigned{font-size:0.68rem;font-family:var(--font-mono);color:var(--muted)}
+.card-date{font-size:0.68rem;font-family:var(--font-mono);color:var(--muted)}
+.card-date.urgent{color:#DC2626;font-weight:600}
+.card-date.soon{color:var(--yellow)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:0.2rem;font-size:0.62rem;font-family:var(--font-mono);font-weight:600;padding:0.1rem 0.45rem;border-radius:3px;white-space:nowrap}
+.b-emergency{background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B}
+.b-high{background:var(--yellow-bg);border:1px solid #FCD34D;color:var(--yellow)}
+.b-medium{background:var(--bg3);border:1px solid var(--border2);color:var(--text-dim)}
+.b-low{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}
+
+.status-badge{display:inline-flex;align-items:center;gap:0.28rem;font-size:0.62rem;font-family:var(--font-mono);padding:0.1rem 0.48rem;border-radius:3px;white-space:nowrap}
+.s-submitted{background:var(--bg3);border:1px solid var(--border2);color:var(--text-dim)}
+.s-in-triage{background:var(--orange-bg);border:1px solid #FED7AA;color:var(--orange)}
+.s-in-discovery{background:var(--yellow-bg);border:1px solid #FCD34D;color:var(--yellow)}
+.s-in-backlog{background:var(--blue-bg);border:1px solid #BFDBFE;color:var(--blue)}
+.s-in-progress{background:var(--blue-bg);border:1px solid #93C5FD;color:var(--blue)}
+.s-complete{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}
+.s-deferred{background:var(--bg3);border:1px solid var(--border2);color:var(--muted)}
+.status-dot-sm{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* TABLE */
+.table-wrap{background:#FFF;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:1rem}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--bg2);padding:0.55rem 1rem;text-align:left;font-size:0.62rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color 0.15s}
+thead th:hover{color:var(--text-dim)}
+thead th.sorted{color:var(--red)}
+thead th .sort-arrow{margin-left:0.3rem;opacity:0.5;font-size:0.66rem}
+tbody tr{border-bottom:1px solid rgba(220,220,220,0.6);transition:background 0.12s;cursor:pointer}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--red-light)}
+tbody tr.selected{background:#FFF5F6}
+td{padding:0.65rem 1rem;font-size:0.8rem;color:var(--text-dim);vertical-align:middle}
+.td-id{font-family:var(--font-mono);font-size:0.68rem;color:var(--muted);white-space:nowrap}
+.td-title{color:var(--text);font-weight:500;max-width:200px}
+.t-sub{font-size:0.68rem;color:var(--text-dim);font-weight:400;margin-top:0.08rem}
+.td-team{font-size:0.75rem;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.td-date{font-family:var(--font-mono);font-size:0.68rem;white-space:nowrap}
+.td-date.urgent{color:#DC2626;font-weight:600}
+.td-date.soon{color:var(--yellow)}
+.td-assigned{font-family:var(--font-mono);font-size:0.68rem;white-space:nowrap}
+.td-actions{text-align:right;white-space:nowrap}
+.action-btn{font-family:var(--font-sans);font-size:0.68rem;font-weight:500;color:var(--red);background:var(--red-light);border:1px solid var(--red-mid);border-radius:var(--radius);padding:0.18rem 0.55rem;cursor:pointer;transition:background 0.15s}
+.action-btn:hover{background:var(--red-mid)}
+.empty-state{text-align:center;padding:3rem;color:var(--muted);font-size:0.82rem;display:none}
+.empty-state.show{display:block}
+
+/* MODAL */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:2rem;animation:fadeIn 0.18s ease}
+#modal.show{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-card{background:#FFF;border:1px solid var(--border);border-top:3px solid var(--red);border-radius:var(--radius);width:100%;max-width:600px;max-height:82vh;overflow-y:auto;animation:slideUp 0.2s ease;box-shadow:0 16px 48px rgba(0,0,0,0.14)}
+@keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);gap:1rem}
+.modal-req-id{font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);margin-bottom:0.3rem}
+.modal-req-title{font-family:var(--font-serif);font-size:1.1rem;font-weight:normal;color:var(--text);line-height:1.25}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0.1rem;flex-shrink:0;transition:color 0.15s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:1.25rem 1.5rem}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.9rem}
+.m-label{font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.2rem}
+.m-val{font-size:0.82rem;color:var(--text-dim)}
+.m-val.strong{color:var(--text);font-weight:600}
+.modal-desc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:0.8rem 0.95rem;font-size:0.8rem;color:var(--text-dim);line-height:1.6;margin-bottom:0.9rem}
+.modal-actions{display:flex;gap:0.65rem;flex-wrap:wrap;padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--bg2)}
+.btn-primary{background:var(--red);color:#FFF;border:none;border-radius:var(--radius);padding:0.52rem 1rem;font-family:var(--font-sans);font-size:0.74rem;font-weight:600;cursor:pointer;transition:background 0.15s}
+.btn-primary:hover{background:var(--red-hover)}
+.btn-ghost{background:#FFF;color:var(--text-dim);border:1px solid var(--border);border-radius:var(--radius);padding:0.52rem 1rem;font-family:var(--font-sans);font-size:0.74rem;cursor:pointer;transition:border-color 0.15s,color 0.15s}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+
+hr.divider{border:none;border-top:1px solid var(--border);margin:0}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-left">
+      <svg viewBox="0 0 170 38" height="22" xmlns="http://www.w3.org/2000/svg" aria-label="Cooley">
+        <text x="0" y="30" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="#C8102E" letter-spacing="-1.5">Cooley</text>
+      </svg>
+      <div class="nav-divider"></div>
+      <div>
+        <div class="nav-title">ARB Intake Dashboard</div>
+        <div class="nav-subtitle">Technology Infrastructure · Enterprise Architecture</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <span class="nav-sync">Last sync: 2 min ago</span>
+      <a href="arb-intake-chat.html" class="nav-btn">+ New Request</a>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE HEADER + STATS -->
+<div class="page-header">
+  <div class="container">
+    <div class="page-eyebrow">Request Pipeline</div>
+    <div class="page-title">Intake Dashboard</div>
+    <div class="page-sub">Architecture Review Board · Technology Infrastructure</div>
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card s-all" data-filter="all">
+        <div class="stat-num">8</div>
+        <div class="stat-label">Total</div>
+        <div class="stat-sub">All requests</div>
+      </div>
+      <div class="stat-card s-new" data-filter="submitted">
+        <div class="stat-num">1</div>
+        <div class="stat-label">Submitted</div>
+        <div class="stat-sub">Awaiting triage</div>
+      </div>
+      <div class="stat-card s-triage" data-filter="in-triage">
+        <div class="stat-num">1</div>
+        <div class="stat-label">In Triage</div>
+        <div class="stat-sub">Under review</div>
+      </div>
+      <div class="stat-card s-disc" data-filter="in-discovery">
+        <div class="stat-num">2</div>
+        <div class="stat-label">Discovery</div>
+        <div class="stat-sub">Active scoping</div>
+      </div>
+      <div class="stat-card s-prog" data-filter="in-progress">
+        <div class="stat-num">2</div>
+        <div class="stat-label">In Progress</div>
+        <div class="stat-sub">Actively working</div>
+      </div>
+      <div class="stat-card s-done" data-filter="complete">
+        <div class="stat-num">1</div>
+        <div class="stat-label">Complete</div>
+        <div class="stat-sub">Delivered</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- PRIORITY QUEUE -->
+<section>
+  <div class="container">
+    <div class="sec-eyebrow">Priority Queue</div>
+    <div class="sec-title">Needs Attention</div>
+    <div class="sec-sub">Emergency and High criticality requests currently active</div>
+    <div class="priority-grid" id="priorityGrid"></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FULL TABLE -->
+<section>
+  <div class="container">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0">
+      <div>
+        <div class="sec-eyebrow">All Requests</div>
+        <div class="sec-title">Request Register</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="searchInput" placeholder="Search requests…">
+      </div>
+      <span class="filter-label">Status</span>
+      <select class="filter-select" id="filterStatus">
+        <option value="">All</option>
+        <option value="submitted">Submitted</option>
+        <option value="in-triage">In Triage</option>
+        <option value="in-discovery">In Discovery</option>
+        <option value="in-backlog">In Backlog</option>
+        <option value="in-progress">In Progress</option>
+        <option value="complete">Complete</option>
+      </select>
+      <span class="filter-label">Criticality</span>
+      <select class="filter-select" id="filterCriticality">
+        <option value="">All</option>
+        <option value="emergency">Emergency</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <span class="filter-label">Type</span>
+      <select class="filter-select" id="filterType">
+        <option value="">All</option>
+        <option value="New Service">New Service</option>
+        <option value="Enhancement">Enhancement</option>
+        <option value="Advisory">Advisory</option>
+        <option value="Compliance">Compliance</option>
+      </select>
+      <button class="filter-reset" id="resetFilters">Reset</button>
+      <span class="result-count" id="resultCount"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="id">ID <span class="sort-arrow">↕</span></th>
+            <th data-sort="title">Request <span class="sort-arrow">↕</span></th>
+            <th data-sort="team">Team <span class="sort-arrow">↕</span></th>
+            <th data-sort="type">Type <span class="sort-arrow">↕</span></th>
+            <th data-sort="criticality">Criticality <span class="sort-arrow">↕</span></th>
+            <th data-sort="status">Status <span class="sort-arrow">↕</span></th>
+            <th data-sort="needDate">Need Date <span class="sort-arrow">↕</span></th>
+            <th data-sort="assigned">Assigned <span class="sort-arrow">↕</span></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState">No requests match the current filters.</div>
+    </div>
+  </div>
+</section>
+
+<!-- DETAIL MODAL -->
+<div id="modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <div class="modal-req-id" id="mId"></div>
+        <div class="modal-req-title" id="mTitle"></div>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div><div class="m-label">Status</div><div class="m-val" id="mStatus"></div></div>
+        <div><div class="m-label">Criticality</div><div class="m-val" id="mCrit"></div></div>
+      </div>
+      <div class="modal-row">
+        <div><div class="m-label">Team</div><div class="m-val strong" id="mTeam"></div></div>
+        <div><div class="m-label">POC / Sponsor</div><div class="m-val" id="mPoc"></div></div>
+      </div>
+      <div class="modal-row">
+        <div><div class="m-label">Request Type</div><div class="m-val" id="mType"></div></div>
+        <div><div class="m-label">App Type</div><div class="m-val" id="mAppType"></div></div>
+      </div>
+      <div class="modal-row">
+        <div><div class="m-label">Need Date</div><div class="m-val" id="mNeedDate"></div></div>
+        <div><div class="m-label">Submitted</div><div class="m-val" id="mSubmitted"></div></div>
+      </div>
+      <div class="modal-row">
+        <div><div class="m-label">Assigned To</div><div class="m-val" id="mAssigned"></div></div>
+        <div><div class="m-label">Hosting</div><div class="m-val" id="mHosting"></div></div>
+      </div>
+      <div class="m-label" style="margin-bottom:0.4rem">Description</div>
+      <div class="modal-desc" id="mDesc"></div>
+      <div class="modal-row">
+        <div><div class="m-label">Vendor</div><div class="m-val" id="mVendor"></div></div>
+        <div><div class="m-label">Last Updated</div><div class="m-val" id="mUpdated"></div></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary">Schedule Kickoff</button>
+      <button class="btn-ghost">Move to Backlog</button>
+      <button class="btn-ghost">Assign to Me</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const requests = [
+  {id:'ARB-2026-044',title:'DR Failover Testing — Production Environment',team:'Infrastructure',poc:'Brian Walsh',sponsor:'VP Infrastructure',type:'Advisory',appType:'Other',criticality:'medium',status:'submitted',needDate:'2026-05-15',submittedDate:'2026-04-03',lastUpdated:'2026-04-03',assigned:'TBD',description:'Structured DR tabletop exercise and live failover validation for us-east-1 → us-west-2. Includes RTO/RPO validation against documented targets and a full run-book review.',vendor:'None',hosting:'AWS'},
+  {id:'ARB-2026-042',title:'Azure DevOps → GitHub Enterprise Migration',team:'Engineering Platform',poc:'James Okafor',sponsor:'CTO',type:'Enhancement',appType:'Other',criticality:'emergency',status:'in-triage',needDate:'2026-04-14',submittedDate:'2026-04-01',lastUpdated:'2026-04-04',assigned:'TBD',description:'ADO license expires April 14. Forced migration of all pipeline definitions and artifact registries to GitHub Actions and GHCR. Estimated 32 pipelines, 4 artifact feeds.',vendor:'None',hosting:'AWS'},
+  {id:'ARB-2026-041',title:'AI Document Review Pipeline',team:'Data Science & Engineering',poc:'Sarah Chen',sponsor:'Michael Torres',type:'New Service',appType:'ML Workload',criticality:'high',status:'in-progress',needDate:'2026-04-30',submittedDate:'2026-03-10',lastUpdated:'2026-04-02',assigned:'J. Patel',description:'ML pipeline for automated contract clause extraction and risk flagging using Amazon Bedrock. Integrates with iManage DMS for document ingestion and writes structured output to Aurora.',vendor:'AWS',hosting:'AWS'},
+  {id:'ARB-2026-039',title:'Client Portal SSO Integration',team:'Practice Engineering',poc:'David Kim',sponsor:'Lisa Wong',type:'Enhancement',appType:'Web',criticality:'medium',status:'in-discovery',needDate:'2026-06-15',submittedDate:'2026-03-18',lastUpdated:'2026-04-01',assigned:'R. Martinez',description:'Extend existing Cognito SSO to the external client portal to support matter status access. Requires ethical wall ACL checks before any matter data is surfaced.',vendor:'None',hosting:'AWS'},
+  {id:'ARB-2026-037',title:'Redshift Analytics Cluster — Finance BI',team:'Analytics & Reporting',poc:'Rachel Nguyen',sponsor:'CFO Office',type:'New Service',appType:'ETL Pipeline',criticality:'medium',status:'in-backlog',needDate:'2026-07-01',submittedDate:'2026-03-05',lastUpdated:'2026-03-28',assigned:'K. Brown',description:'Managed data warehouse for billing analytics, matter profitability reporting, and executive BI dashboards. Source: Elite 3E. Sink: Redshift + QuickSight.',vendor:'None',hosting:'AWS'},
+  {id:'ARB-2026-033',title:'Zero-Trust Network Segmentation',team:'Information Security',poc:'Alex Rivera',sponsor:'CISO',type:'Compliance',appType:'Other',criticality:'high',status:'in-progress',needDate:'2026-05-31',submittedDate:'2026-02-20',lastUpdated:'2026-04-03',assigned:'T. Johnson',description:'Micro-segmentation of practice group VLANs per ISO 27001 audit findings (Finding #CR-14). Palo Alto Panorama policy rollout across U1 and U2 colo. Includes WAF tuning for client-facing apps.',vendor:'Palo Alto Networks',hosting:'Colo'},
+  {id:'ARB-2026-028',title:'M365 Copilot Enterprise Deployment',team:'IT Operations',poc:'Priya Singh',sponsor:'COO',type:'New Service',appType:'Full Stack',criticality:'high',status:'in-discovery',needDate:'2026-06-30',submittedDate:'2026-02-01',lastUpdated:'2026-04-01',assigned:'S. Lee',description:'Firm-wide rollout of Microsoft 365 Copilot with M365 DLP controls, ethical wall compliance validation, and Purview sensitivity label enforcement. Piloting with 50-seat cohort in May.',vendor:'Microsoft',hosting:'Azure'},
+  {id:'ARB-2026-019',title:'Salesforce — NetSuite Billing Integration',team:'Business Technology',poc:'Tom Bradley',sponsor:'CRO',type:'Enhancement',appType:'API',criticality:'low',status:'complete',needDate:'2026-03-15',submittedDate:'2026-01-10',lastUpdated:'2026-03-20',assigned:'M. Patel',description:'Bidirectional sync of matter billing data between Salesforce CRM and NetSuite ERP via Boomi middleware. Handles currency, matter phase mapping, and exception alerting.',vendor:'Boomi',hosting:'Other'}
+];
+
+let activeFilter='all', sortField='needDate', sortDir=1, selectedId=null;
+
+const critLabels={emergency:'🔴 Emergency',high:'🟡 High',medium:'⚪ Medium',low:'🟢 Low'};
+const critClass={emergency:'b-emergency',high:'b-high',medium:'b-medium',low:'b-low'};
+const statusLabels={'submitted':'Submitted','in-triage':'In Triage','in-discovery':'In Discovery','in-backlog':'In Backlog','in-progress':'In Progress','complete':'Complete','deferred':'Deferred'};
+const statusClass={'submitted':'s-submitted','in-triage':'s-in-triage','in-discovery':'s-in-discovery','in-backlog':'s-in-backlog','in-progress':'s-in-progress','complete':'s-complete','deferred':'s-deferred'};
+
+function formatDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function dateUrgency(d){if(!d)return'';const days=(new Date(d)-new Date())/86400000;if(days<14)return'urgent';if(days<45)return'soon';return'';}
+function critBadge(c){return`<span class="badge ${critClass[c]||''}">${critLabels[c]||c}</span>`;}
+function statusBadge(s){return`<span class="status-badge ${statusClass[s]||''}"><span class="status-dot-sm"></span>${statusLabels[s]||s}</span>`;}
+
+function getFiltered(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  const fStatus=document.getElementById('filterStatus').value;
+  const fCrit=document.getElementById('filterCriticality').value;
+  const fType=document.getElementById('filterType').value;
+  return requests.filter(r=>{
+    if(activeFilter!=='all'&&r.status!==activeFilter)return false;
+    if(fStatus&&r.status!==fStatus)return false;
+    if(fCrit&&r.criticality!==fCrit)return false;
+    if(fType&&!r.type.includes(fType))return false;
+    if(search){const hay=[r.id,r.title,r.team,r.poc,r.description].join(' ').toLowerCase();if(!hay.includes(search))return false;}
+    return true;
+  }).sort((a,b)=>{let av=a[sortField]||'',bv=b[sortField]||'';return av<bv?-sortDir:av>bv?sortDir:0;});
+}
+
+function renderPriorityCards(){
+  const urgent=requests.filter(r=>(r.criticality==='emergency'||r.criticality==='high')&&r.status!=='complete'&&r.status!=='deferred');
+  const grid=document.getElementById('priorityGrid');
+  if(urgent.length===0){grid.innerHTML='<p style="color:var(--muted);font-size:0.82rem;padding:1.25rem 0;">No high-priority active requests — all clear.</p>';return;}
+  grid.innerHTML=urgent.map(r=>{
+    const urg=dateUrgency(r.needDate);
+    return`<div class="req-card ${r.criticality}" data-id="${r.id}">
+      <div class="card-top"><div class="card-id">${r.id}</div><div style="display:flex;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end">${critBadge(r.criticality)}${statusBadge(r.status)}</div></div>
+      <div class="card-title">${r.title}</div>
+      <div class="card-desc">${r.description.slice(0,110)}…</div>
+      <div class="card-meta"><span class="card-team">${r.team}</span></div>
+      <div class="card-footer"><div class="card-assigned">→ ${r.assigned}</div><div class="card-date ${urg}">Need: ${formatDate(r.needDate)}</div></div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.req-card').forEach(el=>el.addEventListener('click',()=>openModal(el.dataset.id)));
+}
+
+function renderTable(){
+  const data=getFiltered();
+  const tbody=document.getElementById('tableBody');
+  const empty=document.getElementById('emptyState');
+  document.getElementById('resultCount').textContent=`${data.length} of ${requests.length} requests`;
+  if(data.length===0){tbody.innerHTML='';empty.classList.add('show');return;}
+  empty.classList.remove('show');
+  tbody.innerHTML=data.map(r=>{
+    const urg=dateUrgency(r.needDate);
+    const sel=selectedId===r.id?'selected':'';
+    return`<tr class="${sel}" data-id="${r.id}">
+      <td class="td-id">${r.id}</td>
+      <td class="td-title">${r.title}<div class="t-sub">${r.poc}</div></td>
+      <td class="td-team">${r.team}</td>
+      <td><span style="font-size:0.72rem;color:var(--text-dim)">${r.type}</span></td>
+      <td>${critBadge(r.criticality)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td class="td-date ${urg}">${formatDate(r.needDate)}</td>
+      <td class="td-assigned">${r.assigned}</td>
+      <td class="td-actions"><button class="action-btn" data-id="${r.id}">Details</button></td>
+    </tr>`;
+  }).join('');
+  tbody.querySelectorAll('tr').forEach(tr=>tr.addEventListener('click',()=>openModal(tr.dataset.id)));
+}
+
+function renderAll(){renderPriorityCards();renderTable();}
+
+function openModal(id){
+  const r=requests.find(x=>x.id===id);if(!r)return;
+  selectedId=id;
+  document.getElementById('mId').textContent=r.id;
+  document.getElementById('mTitle').textContent=r.title;
+  document.getElementById('mStatus').innerHTML=statusBadge(r.status);
+  document.getElementById('mCrit').innerHTML=critBadge(r.criticality);
+  document.getElementById('mTeam').textContent=r.team;
+  document.getElementById('mPoc').textContent=`${r.poc} · ${r.sponsor}`;
+  document.getElementById('mType').textContent=r.type;
+  document.getElementById('mAppType').textContent=r.appType;
+  document.getElementById('mNeedDate').textContent=formatDate(r.needDate);
+  document.getElementById('mSubmitted').textContent=formatDate(r.submittedDate);
+  document.getElementById('mAssigned').textContent=r.assigned;
+  document.getElementById('mHosting').textContent=r.hosting;
+  document.getElementById('mDesc').textContent=r.description;
+  document.getElementById('mVendor').textContent=r.vendor||'None';
+  document.getElementById('mUpdated').textContent=formatDate(r.lastUpdated);
+  document.getElementById('modal').classList.add('show');
+  renderTable();
+}
+
+document.getElementById('modalClose').addEventListener('click',()=>{document.getElementById('modal').classList.remove('show');selectedId=null;renderTable();});
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal')){document.getElementById('modal').classList.remove('show');selectedId=null;renderTable();}});
+
+document.getElementById('statsRow').querySelectorAll('.stat-card').forEach(card=>{
+  card.addEventListener('click',()=>{
+    activeFilter=card.dataset.filter;
+    document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active-filter'));
+    card.classList.add('active-filter');
+    document.getElementById('filterStatus').value=activeFilter==='all'?'':activeFilter;
+    renderTable();
+  });
+});
+
+['searchInput','filterStatus','filterCriticality','filterType'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    if(id==='filterStatus'){activeFilter=document.getElementById('filterStatus').value||'all';document.querySelectorAll('.stat-card').forEach(c=>{c.classList.toggle('active-filter',c.dataset.filter===activeFilter);});}
+    renderTable();
+  });
+});
+document.getElementById('resetFilters').addEventListener('click',()=>{
+  document.getElementById('searchInput').value='';
+  document.getElementById('filterStatus').value='';
+  document.getElementById('filterCriticality').value='';
+  document.getElementById('filterType').value='';
+  activeFilter='all';
+  document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active-filter'));
+  renderTable();
+});
+
+document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const field=th.dataset.sort;
+    if(sortField===field){sortDir*=-1;}else{sortField=field;sortDir=1;}
+    document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    const arrow=th.querySelector('.sort-arrow');
+    if(arrow)arrow.textContent=sortDir===1?' ↑':' ↓';
+    renderTable();
+  });
+});
+
+renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Environment Request — Cooley Technology Infrastructure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════════
+   COOLEY DESIGN TOKENS
+   ════════════════════════════════════════════ */
+:root {
+  --red:        #C8102E;
+  --red-hover:  #A80D24;
+  --red-light:  #FEF2F4;
+  --red-mid:    #F0C0C8;
+  --bg:         #FFFFFF;
+  --bg2:        #F6F6F6;
+  --bg3:        #EBEBEB;
+  --border:     #DCDCDC;
+  --border2:    #C4C4C4;
+  --text:       #1C1C1C;
+  --text-dim:   #5A5A5A;
+  --muted:      #9A9A9A;
+  --green:      #1A6E34;
+  --green-bg:   #EBF5EE;
+  --green-bd:   #86EFAC;
+  --yellow:     #7A5C00;
+  --yellow-bg:  #FFFBEB;
+  --blue:       #1E4D8C;
+  --blue-bg:    #EFF6FF;
+  --blue-bd:    #BFDBFE;
+  --radius:     6px;
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.07);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.09);
+  --font-sans:  "Inter", system-ui, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono:  "Fira Code", monospace;
+}
+
+*, ::before, ::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg2);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── NAV ───────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  height: 56px;
+  background: #fff;
+  border-bottom: 2px solid var(--red);
+  display: flex; align-items: center;
+  padding: 0 2rem;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.nav-left { display: flex; align-items: center; gap: 1rem; }
+.nav-divider { width: 1px; height: 20px; background: var(--border); }
+.nav-title { font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.2; }
+.nav-sub { font-size: 0.67rem; color: var(--muted); }
+.nav-right { display: flex; align-items: center; gap: 0.85rem; }
+.nav-tag {
+  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 500;
+  color: var(--red); background: var(--red-light); border: 1px solid var(--red-mid);
+  padding: 0.15rem 0.5rem; border-radius: 3px; letter-spacing: 0.03em;
+}
+.nav-link {
+  font-size: 0.78rem; font-weight: 500; color: var(--text-dim);
+  text-decoration: none; transition: color 0.15s;
+}
+.nav-link:hover { color: var(--red); }
+
+/* ── PAGE LAYOUT ───────────────────────────── */
+.page-wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 5rem;
+}
+
+/* ── PAGE HEADER ───────────────────────────── */
+.page-header {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  border-radius: var(--radius);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.page-eyebrow {
+  font-family: var(--font-mono); font-size: 0.62rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--red);
+  margin-bottom: 0.35rem;
+}
+.page-title {
+  font-family: var(--font-serif); font-size: 1.5rem; font-weight: normal;
+  color: var(--text); margin-bottom: 0.4rem;
+}
+.page-desc { font-size: 0.845rem; color: var(--text-dim); max-width: 640px; line-height: 1.6; }
+.page-meta {
+  display: flex; align-items: center; gap: 1.25rem;
+  margin-top: 1rem; padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.72rem; color: var(--muted);
+  font-family: var(--font-mono);
+}
+.page-meta span { display: flex; align-items: center; gap: 0.3rem; }
+.page-meta strong { color: var(--text-dim); font-weight: 500; }
+
+/* ── PROGRESS STEPPER ──────────────────────── */
+.stepper {
+  display: flex; align-items: center; gap: 0;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);
+}
+.step {
+  flex: 1; padding: 0.75rem 0.5rem;
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.5rem; cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: background 0.15s;
+  position: relative;
+}
+.step:last-child { border-right: none; }
+.step:hover { background: var(--bg2); }
+.step.active { background: var(--red-light); }
+.step.done { background: var(--green-bg); }
+.step-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600;
+  background: var(--bg3); color: var(--muted); flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.step.active .step-num { background: var(--red); color: #fff; }
+.step.done .step-num { background: var(--green); color: #fff; }
+.step.done .step-num::after { content: '✓'; }
+.step.done .step-num-val { display: none; }
+.step-label { font-size: 0.72rem; font-weight: 500; color: var(--text-dim); white-space: nowrap; }
+.step.active .step-label { color: var(--red); font-weight: 600; }
+.step.done .step-label { color: var(--green); }
+
+/* ── FORM CARD ─────────────────────────────── */
+.form-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+.form-card-header {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.85rem 1.5rem;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.form-card-header:hover { background: var(--bg3); }
+.form-card-icon { font-size: 0.9rem; flex-shrink: 0; }
+.form-card-title-wrap { flex: 1; }
+.form-card-title {
+  font-size: 0.88rem; font-weight: 600; color: var(--text); line-height: 1.2;
+}
+.form-card-sub {
+  font-size: 0.68rem; color: var(--muted); margin-top: 0.05rem;
+  font-family: var(--font-mono);
+}
+.form-card-badge {
+  font-family: var(--font-mono); font-size: 0.58rem; font-weight: 600;
+  padding: 0.1rem 0.45rem; border-radius: 3px; letter-spacing: 0.04em;
+}
+.badge-required { background: var(--red); color: #fff; }
+.badge-optional { background: var(--bg3); color: var(--muted); border: 1px solid var(--border); }
+.form-card-chevron {
+  font-size: 0.7rem; color: var(--muted); transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.form-card.collapsed .form-card-chevron { transform: rotate(-90deg); }
+.form-card-body { padding: 1.5rem; display: block; }
+.form-card.collapsed .form-card-body { display: none; }
+
+/* ── FORM FIELDS ───────────────────────────── */
+.field-grid { display: grid; gap: 1.1rem; }
+.field-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.field { display: flex; flex-direction: column; gap: 0.3rem; }
+.field-label {
+  font-size: 0.68rem; font-weight: 600; color: var(--text);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.field-label .req { color: var(--red); margin-left: 0.2rem; }
+.field-hint { font-size: 0.68rem; color: var(--muted); margin-top: 0.1rem; line-height: 1.4; }
+
+input[type=text], input[type=email], input[type=date], input[type=number], input[type=url],
+select, textarea {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  padding: 0.55rem 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text);
+  width: 100%;
+  transition: border-color 0.2s, background 0.2s;
+  appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--red);
+  background: #fff;
+}
+input::placeholder, textarea::placeholder { color: var(--muted); }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239A9A9A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.25rem; }
+textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
+input[type=date] { font-family: var(--font-sans); }
+
+/* Radio + checkbox */
+.check-group { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.1rem; }
+.check-group.horizontal { flex-direction: row; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.check-item {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  cursor: pointer; font-size: 0.82rem; color: var(--text-dim);
+  line-height: 1.45;
+}
+.check-item input { accent-color: var(--red); margin-top: 0.18rem; flex-shrink: 0; }
+.check-item.inline { align-items: center; }
+.check-item .sublabel { font-size: 0.7rem; color: var(--muted); display: block; }
+
+/* ── ENVIRONMENT TABS ──────────────────────── */
+.env-tabs {
+  display: flex; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+  background: var(--bg2);
+}
+.env-tab {
+  flex: 1; padding: 0.7rem 0.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  cursor: pointer; border-right: 1px solid var(--border);
+  transition: background 0.15s;
+  user-select: none;
+}
+.env-tab:last-child { border-right: none; }
+.env-tab:hover { background: var(--bg3); }
+.env-tab.active { background: #fff; border-bottom: 2px solid var(--red); }
+.env-tab-label { font-size: 0.72rem; font-weight: 600; color: var(--text-dim); }
+.env-tab.active .env-tab-label { color: var(--red); }
+.env-tab-badge { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 500; color: var(--muted); }
+.env-tab-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); }
+.env-tab.active .env-tab-dot { background: var(--red); }
+.env-tab.configured .env-tab-dot { background: var(--green); }
+.env-tab.configured .env-tab-label { color: var(--green); }
+.env-tab.configured.active .env-tab-label { color: var(--red); }
+.env-tab.configured.active .env-tab-dot { background: var(--red); }
+
+.env-panel { display: none; border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); background: #fff; }
+.env-panel.active { display: block; }
+.env-panel-body { padding: 1.35rem 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+
+.env-enabled-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg2); border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.env-enabled-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.env-enabled-sub { font-size: 0.7rem; color: var(--muted); }
+
+/* Toggle */
+.toggle-wrap { display: flex; align-items: center; gap: 0.6rem; }
+.toggle-label { font-size: 0.72rem; color: var(--text-dim); font-weight: 500; }
+.toggle {
+  position: relative; width: 38px; height: 21px;
+  cursor: pointer;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--border2); border-radius: 999px;
+  transition: background 0.2s;
+}
+.toggle input:checked ~ .toggle-track { background: var(--red); }
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 15px; height: 15px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(17px); }
+
+/* ── SECTION DIVIDER ───────────────────────── */
+.section-divider {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 1.25rem 0 1rem;
+}
+.section-divider-label {
+  font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.09em; color: var(--muted); white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.section-divider-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ── INLINE NOTE ───────────────────────────── */
+.inline-note {
+  background: var(--blue-bg); border: 1px solid var(--blue-bd);
+  border-radius: var(--radius); padding: 0.65rem 0.85rem;
+  font-size: 0.78rem; color: var(--blue);
+  display: flex; gap: 0.5rem; align-items: flex-start; line-height: 1.5;
+}
+.inline-note.warn {
+  background: var(--yellow-bg); border-color: #FCD34D; color: var(--yellow);
+}
+.inline-note.danger {
+  background: var(--red-light); border-color: var(--red-mid); color: var(--red);
+}
+.inline-note-icon { flex-shrink: 0; font-size: 0.85rem; }
+
+/* ── LEASE DURATION ────────────────────────── */
+.lease-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.65rem; }
+.lease-opt {
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 0.7rem 0.75rem; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.lease-opt:hover { border-color: var(--border2); background: var(--bg2); }
+.lease-opt.selected { border-color: var(--red); background: var(--red-light); }
+.lease-opt input { display: none; }
+.lease-opt-value { font-size: 1rem; font-weight: 700; color: var(--text); line-height: 1; }
+.lease-opt.selected .lease-opt-value { color: var(--red); }
+.lease-opt-unit { font-size: 0.65rem; color: var(--muted); margin-top: 0.15rem; font-family: var(--font-mono); }
+.lease-opt-tag { font-size: 0.6rem; font-weight: 600; color: var(--red); background: var(--red-light); padding: 0.08rem 0.35rem; border-radius: 2px; margin-top: 0.3rem; display: inline-block; }
+
+/* ── COST ESTIMATE WIDGET ──────────────────── */
+.cost-estimate {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.cost-estimate-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.1rem; font-family: var(--font-mono); }
+.cost-estimate-val { font-size: 1.3rem; font-weight: 700; color: var(--text); line-height: 1; }
+.cost-estimate-sub { font-size: 0.68rem; color: var(--muted); margin-top: 0.1rem; }
+.cost-breakdown { display: flex; flex-direction: column; gap: 0.25rem; }
+.cost-row { display: flex; justify-content: space-between; gap: 1.5rem; font-size: 0.75rem; }
+.cost-row-label { color: var(--text-dim); }
+.cost-row-val { font-family: var(--font-mono); font-size: 0.73rem; color: var(--text); font-weight: 500; }
+
+/* ── IAM / PERMISSIONS TABLE ───────────────── */
+.perm-row {
+  display: grid; grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 0; border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 0.6rem;
+}
+.perm-cell {
+  padding: 0.6rem 0.85rem; border-right: 1px solid var(--border);
+  background: #fff;
+}
+.perm-cell:last-child { border-right: none; }
+.perm-cell-head { background: var(--bg2); }
+.perm-cell-head .perm-label { font-size: 0.62rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-family: var(--font-mono); }
+.perm-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.perm-desc { font-size: 0.7rem; color: var(--muted); }
+
+/* ── SUBMIT AREA ───────────────────────────── */
+.submit-area {
+  background: #fff; border: 1px solid var(--border);
+  border-top: 3px solid var(--red);
+  border-radius: var(--radius); padding: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
+}
+.submit-info { font-size: 0.78rem; color: var(--text-dim); }
+.submit-info strong { color: var(--text); display: block; font-size: 0.88rem; margin-bottom: 0.15rem; }
+.submit-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+.btn-primary {
+  background: var(--red); color: #fff; border: none;
+  border-radius: var(--radius); padding: 0.6rem 1.4rem;
+  font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s; letter-spacing: 0.01em;
+}
+.btn-primary:hover { background: var(--red-hover); }
+.btn-ghost {
+  background: transparent; color: var(--red);
+  border: 1.5px solid var(--red); border-radius: var(--radius);
+  padding: 0.55rem 1.1rem;
+  font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover { background: var(--red); color: #fff; }
+.btn-secondary {
+  background: #fff; color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 0.55rem 1.1rem;
+  font-family: var(--font-sans); font-size: 0.82rem;
+  cursor: pointer; transition: border-color 0.15s, color 0.15s;
+}
+.btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+
+/* ── SUCCESS OVERLAY ───────────────────────── */
+#successOverlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(6px); z-index: 300;
+  display: none; align-items: center; justify-content: center;
+}
+#successOverlay.show { display: flex; }
+.success-card {
+  background: #fff; border: 1px solid var(--border);
+  border-top: 3px solid var(--green);
+  border-radius: var(--radius); padding: 2.5rem 3rem;
+  max-width: 440px; text-align: center;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+  animation: popIn 0.25s ease;
+}
+@keyframes popIn { from{opacity:0;transform:scale(0.96)translateY(10px)}to{opacity:1;transform:none} }
+.success-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+.success-title { font-family: var(--font-serif); font-size: 1.25rem; color: var(--text); margin-bottom: 0.5rem; }
+.success-sub { font-size: 0.82rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 1.5rem; }
+.success-id { font-family: var(--font-mono); font-size: 0.82rem; color: var(--red); background: var(--red-light); border: 1px solid var(--red-mid); padding: 0.35rem 0.75rem; border-radius: 3px; display: inline-block; margin-bottom: 1.5rem; }
+
+/* ── MISC ──────────────────────────────────── */
+.chip {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-family: var(--font-mono); font-size: 0.65rem;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 3px; padding: 0.08rem 0.45rem; color: var(--text-dim);
+}
+.spacer { height: 1rem; }
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══════════════════════════════════════ -->
+<nav>
+  <div class="nav-left">
+    <svg viewBox="0 0 170 38" height="22" xmlns="http://www.w3.org/2000/svg" aria-label="Cooley">
+      <text x="0" y="30" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="#C8102E" letter-spacing="-1.5">Cooley</text>
+    </svg>
+    <div class="nav-divider"></div>
+    <div>
+      <div class="nav-title">AWS Environment Request</div>
+      <div class="nav-sub">Technology Infrastructure · Enterprise Architecture</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-tag">ARB</span>
+    <a href="#" class="nav-link">Dashboard →</a>
+  </div>
+</nav>
+
+<!-- ══ MAIN ═════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-eyebrow">// Technology Infrastructure</div>
+    <div class="page-title">AWS Environment Provisioning Request</div>
+    <div class="page-desc">Use this form to request provisioning of one or more AWS environments for a web application hosted in a Cooley corporate AWS account. Requests are reviewed by the EA &amp; Infrastructure team and provisioned within 5–10 business days depending on complexity.</div>
+    <div class="page-meta">
+      <span>📋 <strong>Form version:</strong> 2.1</span>
+      <span>🔄 <strong>SLA:</strong> 5–10 business days</span>
+      <span>⚠️ <strong>Incidents/break-fix</strong> → ServiceNow</span>
+      <span>📂 <strong>Related:</strong> ARB Intake required for new applications</span>
+    </div>
+  </div>
+
+  <!-- PROGRESS STEPPER -->
+  <div class="stepper" id="stepper">
+    <div class="step active" data-step="0" onclick="goStep(0)">
+      <div class="step-num"><span class="step-num-val">1</span></div>
+      <div class="step-label">Requestor</div>
+    </div>
+    <div class="step" data-step="1" onclick="goStep(1)">
+      <div class="step-num"><span class="step-num-val">2</span></div>
+      <div class="step-label">Application</div>
+    </div>
+    <div class="step" data-step="2" onclick="goStep(2)">
+      <div class="step-num"><span class="step-num-val">3</span></div>
+      <div class="step-label">Environments</div>
+    </div>
+    <div class="step" data-step="3" onclick="goStep(3)">
+      <div class="step-num"><span class="step-num-val">4</span></div>
+      <div class="step-label">Infrastructure</div>
+    </div>
+    <div class="step" data-step="4" onclick="goStep(4)">
+      <div class="step-num"><span class="step-num-val">5</span></div>
+      <div class="step-label">Access &amp; IAM</div>
+    </div>
+    <div class="step" data-step="5" onclick="goStep(5)">
+      <div class="step-num"><span class="step-num-val">6</span></div>
+      <div class="step-label">Lease &amp; Cost</div>
+    </div>
+    <div class="step" data-step="6" onclick="goStep(6)">
+      <div class="step-num"><span class="step-num-val">7</span></div>
+      <div class="step-label">Review</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 1 — REQUESTOR
+       ════════════════════════════════════════════ -->
+  <div class="form-card" data-section="0" id="sec0">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">👤</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 1 — Requestor Information</div>
+        <div class="form-card-sub">A1 of ARB Intake · Contact info &amp; sponsorship</div>
+      </div>
+      <span class="form-card-badge badge-required">REQUIRED</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+      <div class="field-grid cols-2">
+        <div class="field">
+          <label class="field-label">Requesting Team / Department <span class="req">*</span></label>
+          <input type="text" placeholder="e.g., Data Science &amp; Engineering">
+        </div>
+        <div class="field">
+          <label class="field-label">Business / Executive Sponsor <span class="req">*</span></label>
+          <input type="text" placeholder="Full name">
+        </div>
+        <div class="field">
+          <label class="field-label">Primary Point of Contact <span class="req">*</span></label>
+          <input type="text" placeholder="Full name">
+        </div>
+        <div class="field">
+          <label class="field-label">POC Email <span class="req">*</span></label>
+          <input type="email" placeholder="name@cooley.com">
+        </div>
+        <div class="field">
+          <label class="field-label">Secondary / Technical Contact</label>
+          <input type="text" placeholder="Full name">
+        </div>
+        <div class="field">
+          <label class="field-label">Technical Contact Email</label>
+          <input type="email" placeholder="name@cooley.com">
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Cost Center</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <div class="field-grid cols-3">
+        <div class="field">
+          <label class="field-label">Cost Center / GL Code <span class="req">*</span></label>
+          <input type="text" placeholder="e.g., CC-12345">
+          <div class="field-hint">AWS costs will be tagged and charged to this code</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Budget Owner</label>
+          <input type="text" placeholder="Full name">
+        </div>
+        <div class="field">
+          <label class="field-label">Monthly Budget Cap (USD)</label>
+          <input type="number" placeholder="e.g., 2500" min="0">
+          <div class="field-hint">Alert threshold — not a hard limit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 2 — APPLICATION
+       ════════════════════════════════════════════ -->
+  <div class="form-card" data-section="1" id="sec1">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">🖥️</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 2 — Application Details</div>
+        <div class="form-card-sub">Identity, stack, and repository information</div>
+      </div>
+      <span class="form-card-badge badge-required">REQUIRED</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+      <div class="field-grid cols-2">
+        <div class="field">
+          <label class="field-label">Application Name <span class="req">*</span></label>
+          <input type="text" placeholder="e.g., Matter Analytics Portal">
+          <div class="field-hint">Formal name used for resource tagging and naming conventions</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Application Short Name / Slug <span class="req">*</span></label>
+          <input type="text" placeholder="e.g., matter-analytics" style="font-family:var(--font-mono)">
+          <div class="field-hint">Lowercase, hyphen-separated — used in resource names and DNS</div>
+        </div>
+        <div class="field">
+          <label class="field-label">GitHub Repository URL <span class="req">*</span></label>
+          <input type="url" placeholder="https://github.com/cooley-llp/...">
+        </div>
+        <div class="field">
+          <label class="field-label">Default Branch</label>
+          <input type="text" placeholder="main" value="main" style="font-family:var(--font-mono)">
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Technology Stack</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <div class="field-grid cols-3">
+        <div class="field">
+          <label class="field-label">Application Type <span class="req">*</span></label>
+          <select>
+            <option value="">Select…</option>
+            <option>Full Stack (Frontend + API + DB)</option>
+            <option>Frontend Only (SPA / SSG)</option>
+            <option>API / Microservice</option>
+            <option>ETL / Data Pipeline</option>
+            <option>ML Workload</option>
+            <option>Batch / Scheduled Job</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Primary Runtime <span class="req">*</span></label>
+          <select>
+            <option value="">Select…</option>
+            <option>Node.js</option>
+            <option>Python</option>
+            <option>Java / JVM</option>
+            <option>.NET / C#</option>
+            <option>Go</option>
+            <option>Ruby</option>
+            <option>Static / No runtime</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Runtime Version / Tag</label>
+          <input type="text" placeholder="e.g., Node 20 LTS" style="font-family:var(--font-mono)">
+        </div>
+        <div class="field">
+          <label class="field-label">Containerized? <span class="req">*</span></label>
+          <select id="containerized">
+            <option value="">Select…</option>
+            <option>Yes — Docker / OCI</option>
+            <option>No — build directly on EC2</option>
+            <option>Partially — some services containerized</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Container Registry</label>
+          <select>
+            <option value="">Select / N/A</option>
+            <option>AWS ECR (Elastic Container Registry)</option>
+            <option>GitHub Container Registry (GHCR)</option>
+            <option>Docker Hub</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">CI/CD Platform <span class="req">*</span></label>
+          <select>
+            <option value="">Select…</option>
+            <option>GitHub Actions</option>
+            <option>AWS CodePipeline</option>
+            <option>Azure DevOps (ADO)</option>
+            <option>Jenkins</option>
+            <option>Other / Manual</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Existing Infrastructure</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <div class="field-grid cols-2">
+        <div class="field">
+          <label class="field-label">Is this a new application or an existing one?</label>
+          <select>
+            <option value="">Select…</option>
+            <option>New application — no existing infrastructure</option>
+            <option>Existing — adding new environment(s)</option>
+            <option>Existing — migrating to new account/region</option>
+            <option>Existing — re-platforming</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Existing AWS Account Name (if any)</label>
+          <input type="text" placeholder="e.g., cooley-dse-nonprod" style="font-family:var(--font-mono)">
+        </div>
+        <div class="field">
+          <label class="field-label">Related ARB Intake Request ID</label>
+          <input type="text" placeholder="e.g., ARB-2026-041" style="font-family:var(--font-mono)">
+          <div class="field-hint">Required for new applications — links to your approved intake record</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Preferred AWS Region <span class="req">*</span></label>
+          <select>
+            <option value="">Select…</option>
+            <option selected>us-east-1 — N. Virginia (primary)</option>
+            <option>us-east-2 — Ohio</option>
+            <option>us-west-2 — Oregon</option>
+            <option>eu-west-1 — Ireland</option>
+            <option>eu-west-2 — London</option>
+            <option>ap-southeast-1 — Singapore</option>
+            <option>Other (specify in comments)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 3 — ENVIRONMENTS
+       ════════════════════════════════════════════ -->
+  <div class="form-card" data-section="2" id="sec2">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">🌐</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 3 — Environment Configuration</div>
+        <div class="form-card-sub">Configure each environment tier independently</div>
+      </div>
+      <span class="form-card-badge badge-required">REQUIRED</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+
+      <div class="inline-note" style="margin-bottom:1rem">
+        <span class="inline-note-icon">ℹ️</span>
+        <span>Select and configure each environment you need. At least one must be enabled. <strong>Production environments require separate ARB approval</strong> and may have additional provisioning SLAs.</span>
+      </div>
+
+      <!-- ENV TABS -->
+      <div class="env-tabs" id="envTabs">
+        <div class="env-tab active" data-env="dev" onclick="switchEnv('dev')">
+          <div class="env-tab-dot"></div>
+          <div class="env-tab-label">Development</div>
+          <div class="env-tab-badge">DEV</div>
+        </div>
+        <div class="env-tab" data-env="uat" onclick="switchEnv('uat')">
+          <div class="env-tab-dot"></div>
+          <div class="env-tab-label">User Acceptance</div>
+          <div class="env-tab-badge">UAT</div>
+        </div>
+        <div class="env-tab" data-env="hotfix" onclick="switchEnv('hotfix')">
+          <div class="env-tab-dot"></div>
+          <div class="env-tab-label">Hotfix / Staging</div>
+          <div class="env-tab-badge">HOTFIX</div>
+        </div>
+        <div class="env-tab" data-env="prod" onclick="switchEnv('prod')">
+          <div class="env-tab-dot"></div>
+          <div class="env-tab-label">Production</div>
+          <div class="env-tab-badge">PROD</div>
+        </div>
+      </div>
+
+      <!-- DEV ENV PANEL -->
+      <div class="env-panel active" id="env-dev">
+        <div class="env-panel-body">
+          <div class="env-enabled-row">
+            <div>
+              <div class="env-enabled-label">Development Environment (DEV)</div>
+              <div class="env-enabled-sub">Sandbox for active development · minimal availability requirements</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" checked onchange="markConfigured('dev', this.checked)">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label class="field-label">Compute Type</label>
+              <select>
+                <option>ECS Fargate (serverless containers)</option>
+                <option>EC2 (self-managed)</option>
+                <option>Lambda (functions)</option>
+                <option>Elastic Beanstalk</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Instance Size / vCPU</label>
+              <select>
+                <option>t3.small (2 vCPU, 2 GB)</option>
+                <option>t3.medium (2 vCPU, 4 GB)</option>
+                <option>t3.large (2 vCPU, 8 GB)</option>
+                <option>m5.large (2 vCPU, 8 GB)</option>
+                <option>Custom (specify below)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Task Count / Desired Replicas</label>
+              <input type="number" value="1" min="1">
+            </div>
+            <div class="field">
+              <label class="field-label">Availability Zone Requirement</label>
+              <select>
+                <option selected>Single-AZ (cost-optimized)</option>
+                <option>Multi-AZ (recommended)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Internet Accessible?</label>
+              <select>
+                <option>Yes — public endpoint via ALB</option>
+                <option>No — internal / private only</option>
+                <option>VPN access only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Requested Need Date</label>
+              <input type="date">
+            </div>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label class="field-label">Auto-Stop Schedule</label>
+              <select>
+                <option>Business hours only (Mon–Fri 8am–8pm ET)</option>
+                <option>Always on (24/7)</option>
+                <option>Custom schedule (specify in comments)</option>
+              </select>
+              <div class="field-hint">Non-prod auto-stop reduces cost · does not apply to prod</div>
+            </div>
+            <div class="field">
+              <label class="field-label">Special Requirements</label>
+              <input type="text" placeholder="e.g., GPU support, high memory, etc.">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UAT ENV PANEL -->
+      <div class="env-panel" id="env-uat">
+        <div class="env-panel-body">
+          <div class="env-enabled-row">
+            <div>
+              <div class="env-enabled-label">User Acceptance Testing (UAT)</div>
+              <div class="env-enabled-sub">Mirrors production · used for stakeholder sign-off before release</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" onchange="markConfigured('uat', this.checked)">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label class="field-label">Compute Type</label>
+              <select>
+                <option>ECS Fargate (serverless containers)</option>
+                <option>EC2 (self-managed)</option>
+                <option>Lambda (functions)</option>
+                <option>Elastic Beanstalk</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Instance Size / vCPU</label>
+              <select>
+                <option>t3.medium (2 vCPU, 4 GB)</option>
+                <option>t3.large (2 vCPU, 8 GB)</option>
+                <option>m5.large (2 vCPU, 8 GB)</option>
+                <option>m5.xlarge (4 vCPU, 16 GB)</option>
+                <option>Custom (specify below)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Task Count / Replicas</label>
+              <input type="number" value="2" min="1">
+            </div>
+            <div class="field">
+              <label class="field-label">Availability Zone</label>
+              <select>
+                <option>Multi-AZ (recommended for UAT)</option>
+                <option>Single-AZ</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Internet Accessible?</label>
+              <select>
+                <option>Yes — public endpoint via ALB</option>
+                <option>No — internal / private only</option>
+                <option>VPN access only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Requested Need Date</label>
+              <input type="date">
+            </div>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label class="field-label">Performance SLA Target</label>
+              <input type="text" placeholder="e.g., 99.5% uptime · &lt;300ms p95">
+            </div>
+            <div class="field">
+              <label class="field-label">Expected Peak Load (UAT)</label>
+              <input type="text" placeholder="e.g., 50 concurrent users">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOTFIX ENV PANEL -->
+      <div class="env-panel" id="env-hotfix">
+        <div class="env-panel-body">
+          <div class="env-enabled-row">
+            <div>
+              <div class="env-enabled-label">Hotfix / Staging Environment</div>
+              <div class="env-enabled-sub">Production-parity staging · emergency patch validation before prod release</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" onchange="markConfigured('hotfix', this.checked)">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+          <div class="inline-note" style="margin-bottom:0.5rem">
+            <span class="inline-note-icon">💡</span>
+            <span>Hotfix environments should mirror production sizing so patch validation is reliable. Shared staging environments are available if dedicated is not needed.</span>
+          </div>
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label class="field-label">Staging Strategy</label>
+              <select>
+                <option>Dedicated hotfix/staging environment</option>
+                <option>Shared staging (coordinate with Infra team)</option>
+                <option>Blue/green slot (rotate with production)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Production Parity</label>
+              <select>
+                <option>Full parity (same sizing as prod)</option>
+                <option>Reduced (50% prod capacity)</option>
+                <option>Minimal (validate only, not load-tested)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Requested Need Date</label>
+              <input type="date">
+            </div>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label class="field-label">Hotfix Branch Naming Convention</label>
+              <input type="text" placeholder="e.g., hotfix/*" value="hotfix/*" style="font-family:var(--font-mono)">
+            </div>
+            <div class="field">
+              <label class="field-label">Auto-Deploy from Branch?</label>
+              <select>
+                <option>Yes — auto-deploy on push to hotfix branch</option>
+                <option>No — manual trigger only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROD ENV PANEL -->
+      <div class="env-panel" id="env-prod">
+        <div class="env-panel-body">
+          <div class="env-enabled-row">
+            <div>
+              <div class="env-enabled-label">Production Environment (PROD)</div>
+              <div class="env-enabled-sub">Live environment serving end users · separate ARB approval required</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" onchange="markConfigured('prod', this.checked)">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+          <div class="inline-note warn" style="margin-bottom:0.75rem">
+            <span class="inline-note-icon">⚠️</span>
+            <span><strong>Production environments require ARB approval</strong> before provisioning. This request will be routed to the ARB queue for review. Provisioning SLA is 10–15 business days for new production accounts.</span>
+          </div>
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label class="field-label">Compute Type <span class="req">*</span></label>
+              <select>
+                <option>ECS Fargate (serverless containers)</option>
+                <option>EC2 Auto Scaling Group</option>
+                <option>EKS (Kubernetes)</option>
+                <option>Lambda (event-driven)</option>
+                <option>Elastic Beanstalk</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Instance Class / Size <span class="req">*</span></label>
+              <select>
+                <option>m5.large (2 vCPU, 8 GB)</option>
+                <option>m5.xlarge (4 vCPU, 16 GB)</option>
+                <option>m5.2xlarge (8 vCPU, 32 GB)</option>
+                <option>c5.large (2 vCPU, 4 GB) — compute-optimized</option>
+                <option>r5.large (2 vCPU, 16 GB) — memory-optimized</option>
+                <option>Custom (specify in comments)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Min / Max Tasks (Autoscaling) <span class="req">*</span></label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+                <input type="number" placeholder="Min" value="2" min="1">
+                <input type="number" placeholder="Max" value="10" min="1">
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Availability Zone <span class="req">*</span></label>
+              <select>
+                <option selected>Multi-AZ (required for prod)</option>
+                <option>Multi-Region (specify DR region below)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">DR / Failover Region</label>
+              <select>
+                <option value="">None / Single region</option>
+                <option>us-east-2 — Ohio</option>
+                <option>us-west-2 — Oregon</option>
+                <option>eu-west-1 — Ireland</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Target Go-Live Date <span class="req">*</span></label>
+              <input type="date">
+            </div>
+          </div>
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label class="field-label">Uptime SLA Target <span class="req">*</span></label>
+              <select>
+                <option>99.9% (≈8.7 hrs/yr downtime)</option>
+                <option>99.5% (≈43.8 hrs/yr)</option>
+                <option>99.0% (≈87.6 hrs/yr)</option>
+                <option>99.99% — requires architecture review</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">RTO (Recovery Time Objective)</label>
+              <input type="text" placeholder="e.g., 4 hours">
+            </div>
+            <div class="field">
+              <label class="field-label">RPO (Recovery Point Objective)</label>
+              <input type="text" placeholder="e.g., 1 hour">
+            </div>
+            <div class="field">
+              <label class="field-label">Expected Peak Concurrent Users</label>
+              <input type="number" placeholder="e.g., 500">
+            </div>
+            <div class="field">
+              <label class="field-label">Expected Requests / Second (p95)</label>
+              <input type="number" placeholder="e.g., 150">
+            </div>
+            <div class="field">
+              <label class="field-label">CDN / CloudFront Required?</label>
+              <select>
+                <option>Yes — static assets and/or edge caching</option>
+                <option>No</option>
+                <option>Unknown — needs architecture review</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 4 — INFRASTRUCTURE
+       ════════════════════════════════════════════ -->
+  <div class="form-card" data-section="3" id="sec3">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">🏗️</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 4 — Shared Infrastructure Requirements</div>
+        <div class="form-card-sub">Database · storage · networking · observability</div>
+      </div>
+      <span class="form-card-badge badge-required">REQUIRED</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+
+      <!-- DATABASE -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Database</div>
+        <div class="section-divider-line"></div>
+      </div>
+      <div class="field-grid cols-2" style="margin-bottom:1rem">
+        <div class="field">
+          <label class="field-label">Database Required? <span class="req">*</span></label>
+          <select id="dbRequired" onchange="toggleDb(this.value)">
+            <option value="">Select…</option>
+            <option value="yes">Yes</option>
+            <option value="no">No — application is stateless</option>
+          </select>
+        </div>
+      </div>
+      <div id="dbFields">
+        <div class="field-grid cols-3">
+          <div class="field">
+            <label class="field-label">Database Engine <span class="req">*</span></label>
+            <select>
+              <option value="">Select…</option>
+              <option>Aurora PostgreSQL (recommended)</option>
+              <option>Aurora MySQL</option>
+              <option>RDS PostgreSQL</option>
+              <option>RDS MySQL</option>
+              <option>RDS SQL Server</option>
+              <option>RDS Oracle</option>
+              <option>DynamoDB (NoSQL)</option>
+              <option>DocumentDB (MongoDB-compatible)</option>
+              <option>Redshift (analytics)</option>
+              <option>Neptune (graph)</option>
+              <option>ElastiCache Redis</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Instance Class</label>
+            <select>
+              <option>db.t3.medium (2 vCPU, 4 GB) — dev/test</option>
+              <option>db.t3.large (2 vCPU, 8 GB)</option>
+              <option>db.r5.large (2 vCPU, 16 GB)</option>
+              <option>db.r5.xlarge (4 vCPU, 32 GB)</option>
+              <option>Serverless v2 (Aurora only)</option>
+              <option>Provisioned IOPS — specify below</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Storage Allocation (GB)</label>
+            <input type="number" placeholder="e.g., 100" min="20">
+          </div>
+          <div class="field">
+            <label class="field-label">Multi-AZ for DB?</label>
+            <select>
+              <option>Yes (required for UAT and prod)</option>
+              <option>No (dev only)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Backup Retention (Days)</label>
+            <select>
+              <option>7 days (standard)</option>
+              <option>14 days</option>
+              <option>30 days</option>
+              <option>35 days (max automated)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label">Shared DB across envs?</label>
+            <select>
+              <option>No — separate instance per environment</option>
+              <option>Yes — dev &amp; UAT share (separate schemas)</option>
+              <option>Prod always isolated</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- STORAGE -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Storage</div>
+        <div class="section-divider-line"></div>
+      </div>
+      <div class="field">
+        <label class="field-label">Storage Services Required</label>
+        <div class="check-group horizontal" style="margin-top:0.35rem">
+          <label class="check-item inline"><input type="checkbox" checked> S3 — object storage / static assets</label>
+          <label class="check-item inline"><input type="checkbox"> EFS — shared file system (NFS)</label>
+          <label class="check-item inline"><input type="checkbox"> EBS — block storage (EC2 only)</label>
+          <label class="check-item inline"><input type="checkbox"> S3 Glacier — archival / compliance</label>
+        </div>
+      </div>
+      <div class="field-grid cols-2" style="margin-top:0.75rem">
+        <div class="field">
+          <label class="field-label">Estimated S3 Storage (GB)</label>
+          <input type="number" placeholder="e.g., 500">
+        </div>
+        <div class="field">
+          <label class="field-label">Data Lifecycle / Retention Policy</label>
+          <select>
+            <option value="">Select…</option>
+            <option>Standard (no automated deletion)</option>
+            <option>30-day transition to Infrequent Access</option>
+            <option>90-day transition to Glacier</option>
+            <option>Custom — specify in comments</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- NETWORKING -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Networking</div>
+        <div class="section-divider-line"></div>
+      </div>
+      <div class="field-grid cols-3">
+        <div class="field">
+          <label class="field-label">VPC Requirement <span class="req">*</span></label>
+          <select>
+            <option>New VPC (recommended for new apps)</option>
+            <option>Existing shared VPC — specify below</option>
+            <option>Existing dedicated VPC — specify below</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Subnet Tier</label>
+          <div class="check-group" style="margin-top:0.2rem">
+            <label class="check-item inline"><input type="checkbox" checked> Public subnet (load balancers)</label>
+            <label class="check-item inline"><input type="checkbox" checked> Private subnet (compute)</label>
+            <label class="check-item inline"><input type="checkbox" checked> Isolated subnet (databases)</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Connectivity Requirements</label>
+          <div class="check-group" style="margin-top:0.2rem">
+            <label class="check-item inline"><input type="checkbox" checked> Public internet (via ALB)</label>
+            <label class="check-item inline"><input type="checkbox"> On-prem / Colo (Direct Connect)</label>
+            <label class="check-item inline"><input type="checkbox"> Private Link / PrivateEndpoint</label>
+            <label class="check-item inline"><input type="checkbox"> VPN access only</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Load Balancer Type</label>
+          <select>
+            <option>ALB — Application Load Balancer (HTTP/S)</option>
+            <option>NLB — Network Load Balancer (TCP)</option>
+            <option>None — direct Lambda / API GW only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Custom Domain / DNS</label>
+          <input type="text" placeholder="e.g., matter-analytics.cooley.com">
+        </div>
+        <div class="field">
+          <label class="field-label">WAF Required?</label>
+          <select>
+            <option>Yes — recommended for all prod endpoints</option>
+            <option>No</option>
+            <option>AWS Managed Rules only</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- OBSERVABILITY -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Observability</div>
+        <div class="section-divider-line"></div>
+      </div>
+      <div class="field-grid cols-2">
+        <div class="field">
+          <label class="field-label">Logging</label>
+          <div class="check-group" style="margin-top:0.2rem">
+            <label class="check-item inline"><input type="checkbox" checked> CloudWatch Logs (standard)</label>
+            <label class="check-item inline"><input type="checkbox"> S3 log archival</label>
+            <label class="check-item inline"><input type="checkbox"> Datadog log forwarding</label>
+            <label class="check-item inline"><input type="checkbox"> OpenSearch / Elasticsearch</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Monitoring &amp; Alerting</label>
+          <div class="check-group" style="margin-top:0.2rem">
+            <label class="check-item inline"><input type="checkbox" checked> CloudWatch alarms + SNS</label>
+            <label class="check-item inline"><input type="checkbox"> Datadog APM</label>
+            <label class="check-item inline"><input type="checkbox"> PagerDuty integration</label>
+            <label class="check-item inline"><input type="checkbox"> Slack alerting channel</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Alert Distribution List / Slack Channel</label>
+          <input type="text" placeholder="e.g., #team-dse-alerts or alerts@cooley.com">
+        </div>
+        <div class="field">
+          <label class="field-label">Log Retention Period</label>
+          <select>
+            <option>30 days (dev/non-prod default)</option>
+            <option>90 days</option>
+            <option>1 year (prod recommended)</option>
+            <option>7 years (compliance/regulatory)</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 5 — ACCESS & IAM
+       ════════════════════════════════════════════ -->
+  <div class="form-card" data-section="4" id="sec4">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">🔐</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 5 — Access &amp; IAM Configuration</div>
+        <div class="form-card-sub">SSO · AD groups · access patterns · permissions boundary</div>
+      </div>
+      <span class="form-card-badge badge-required">REQUIRED</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+
+      <div class="field-grid cols-2">
+        <div class="field">
+          <label class="field-label">SSO / Federated Identity Required? <span class="req">*</span></label>
+          <select>
+            <option>Yes — Cooley SSO via Cognito + Azure AD SAML</option>
+            <option>No — application manages its own auth</option>
+            <option>Mixed — infrastructure SSO, app auth separate</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">MFA Requirement</label>
+          <select>
+            <option>Required for all users (recommended)</option>
+            <option>Required for admin roles only</option>
+            <option>Not required — internal only app</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Access Roles — Per Environment</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <!-- Permission rows -->
+      <div class="perm-row">
+        <div class="perm-cell perm-cell-head"><div class="perm-label">Role / AD Group</div></div>
+        <div class="perm-cell perm-cell-head"><div class="perm-label">Non-Prod (Dev / UAT / Hotfix)</div></div>
+        <div class="perm-cell perm-cell-head"><div class="perm-label">Production</div></div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-cell"><div class="perm-name">Developers</div><div class="perm-desc">Engineering team members — write code, read logs</div></div>
+        <div class="perm-cell"><select><option>Full Access (deploy + debug)</option><option>Read + Deploy only</option><option>Read only</option><option>No access</option></select></div>
+        <div class="perm-cell"><select><option>Read only (logs + metrics)</option><option>Full Access</option><option>No access</option></select></div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-cell"><div class="perm-name">DevOps / Platform</div><div class="perm-desc">CI/CD and infrastructure operators</div></div>
+        <div class="perm-cell"><select><option selected>Full Access</option><option>Read + Deploy only</option><option>Read only</option></select></div>
+        <div class="perm-cell"><select><option selected>Full Access (break-glass)</option><option>Read + Deploy only</option><option>Read only</option></select></div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-cell"><div class="perm-name">QA / Testers</div><div class="perm-desc">UAT acceptance team — no deploy rights</div></div>
+        <div class="perm-cell"><select><option>Read only (logs + app access)</option><option>Full Access</option><option>No access</option></select></div>
+        <div class="perm-cell"><select><option selected>No access</option><option>Read only</option></select></div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-cell"><div class="perm-name">Business Stakeholders</div><div class="perm-desc">UAT sign-off reviewers — app access only</div></div>
+        <div class="perm-cell"><select><option>App access only (no AWS console)</option><option>Read only</option><option>No access</option></select></div>
+        <div class="perm-cell"><select><option selected>No access</option><option>App access only</option></select></div>
+      </div>
+      <div class="perm-row">
+        <div class="perm-cell"><div class="perm-name">Security / Audit</div><div class="perm-desc">InfoSec read-only audit access</div></div>
+        <div class="perm-cell"><select><option selected>Read only (all envs)</option><option>No access</option></select></div>
+        <div class="perm-cell"><select><option selected>Read only (all envs)</option><option>No access</option></select></div>
+      </div>
+
+      <div class="field-grid cols-2" style="margin-top:1.1rem">
+        <div class="field">
+          <label class="field-label">AD Security Group Names (non-prod)</label>
+          <textarea placeholder="e.g., SG-DSE-Dev-Engineers&#10;SG-DSE-QA-Testers" rows="3"></textarea>
+          <div class="field-hint">One group per line — .a accounts only for elevated access</div>
+        </div>
+        <div class="field">
+          <label class="field-label">AD Security Group Names (prod)</label>
+          <textarea placeholder="e.g., SG-DSE-Prod-Ops&#10;SG-Security-Audit" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Secrets Management</label>
+          <select>
+            <option>AWS Secrets Manager (recommended)</option>
+            <option>AWS Systems Manager Parameter Store</option>
+            <option>Application-managed (HashiCorp Vault)</option>
+            <option>No secrets required</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Permissions Boundary Required?</label>
+          <select>
+            <option>Yes — apply standard Cooley permissions boundary</option>
+            <option>No — standard IAM roles sufficient</option>
+            <option>Unknown — discuss in scoping call</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 6 — LEASE & COST
+       ════════════════════════════════════════════ -->
+  <div class="form-card" data-section="5" id="sec5">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">📅</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 6 — Lease Duration &amp; Cost Governance</div>
+        <div class="form-card-sub">Environment lifecycle · expiry · renewal · estimated cost</div>
+      </div>
+      <span class="form-card-badge badge-required">REQUIRED</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+
+      <div class="inline-note warn" style="margin-bottom:1rem">
+        <span class="inline-note-icon">⏱️</span>
+        <span>All non-production environments are provisioned with a <strong>lease expiry</strong>. Production environments are permanent unless explicitly decommissioned via the Infra team. Environments approaching expiry receive 30/14/7-day email reminders.</span>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Non-Production Lease Duration</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <div style="margin-bottom:0.5rem;font-size:0.78rem;color:var(--text-dim)">Applies to: DEV · UAT · Hotfix environments</div>
+      <div class="lease-grid" id="leasePicker">
+        <label class="lease-opt" onclick="selectLease(this, '3m')">
+          <input type="radio" name="lease" value="3m">
+          <div class="lease-opt-value">3</div>
+          <div class="lease-opt-unit">Months</div>
+        </label>
+        <label class="lease-opt selected" onclick="selectLease(this, '6m')">
+          <input type="radio" name="lease" value="6m" checked>
+          <div class="lease-opt-value">6</div>
+          <div class="lease-opt-unit">Months</div>
+          <div class="lease-opt-tag">DEFAULT</div>
+        </label>
+        <label class="lease-opt" onclick="selectLease(this, '12m')">
+          <input type="radio" name="lease" value="12m">
+          <div class="lease-opt-value">12</div>
+          <div class="lease-opt-unit">Months</div>
+        </label>
+        <label class="lease-opt" onclick="selectLease(this, 'custom')">
+          <input type="radio" name="lease" value="custom">
+          <div class="lease-opt-value">—</div>
+          <div class="lease-opt-unit">Custom date</div>
+        </label>
+      </div>
+      <div id="customDateField" style="display:none;margin-top:0.75rem">
+        <div class="field-grid cols-2">
+          <div class="field">
+            <label class="field-label">Custom Expiry Date</label>
+            <input type="date">
+          </div>
+        </div>
+      </div>
+
+      <div class="field-grid cols-2" style="margin-top:1.1rem">
+        <div class="field">
+          <label class="field-label">Auto-Renewal Policy</label>
+          <select>
+            <option>Request manual renewal 30 days before expiry</option>
+            <option>Auto-renew for same duration (team approval)</option>
+            <option>Decommission on expiry (no renewal)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">On Expiry Action</label>
+          <select>
+            <option>Stop instances (preserve data for 30 days)</option>
+            <option>Archive and snapshot (preserve 90 days)</option>
+            <option>Terminate and delete (no data retention)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Environment Purpose / Justification</label>
+          <input type="text" placeholder="e.g., Active development — Matter Analytics Portal v2">
+          <div class="field-hint">Used for lease renewal review — be specific</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Expiry Notification Recipients</label>
+          <input type="text" placeholder="e.g., team@cooley.com, manager@cooley.com">
+        </div>
+      </div>
+
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-label">Cost Estimate</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <div class="cost-estimate">
+        <div>
+          <div class="cost-estimate-label">Estimated Monthly Cost</div>
+          <div class="cost-estimate-val" id="estTotal">~$1,240</div>
+          <div class="cost-estimate-sub">Across all requested environments · ex-prod</div>
+        </div>
+        <div class="cost-breakdown">
+          <div class="cost-row"><span class="cost-row-label">Compute (ECS Fargate)</span><span class="cost-row-val">~$380 / mo</span></div>
+          <div class="cost-row"><span class="cost-row-label">Database (Aurora PostgreSQL)</span><span class="cost-row-val">~$510 / mo</span></div>
+          <div class="cost-row"><span class="cost-row-label">Storage (S3 + EBS)</span><span class="cost-row-val">~$85 / mo</span></div>
+          <div class="cost-row"><span class="cost-row-label">Networking (ALB + data transfer)</span><span class="cost-row-val">~$95 / mo</span></div>
+          <div class="cost-row"><span class="cost-row-label">Logging &amp; monitoring</span><span class="cost-row-val">~$170 / mo</span></div>
+        </div>
+        <div>
+          <div style="font-size:0.68rem;color:var(--muted);max-width:180px;line-height:1.4">Actual costs confirmed after architecture review. Production estimate provided separately.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 7 — SECURITY & COMPLIANCE
+       ════════════════════════════════════════════ -->
+  <div class="form-card collapsed" data-section="6" id="sec6">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">🛡️</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 7 — Security &amp; Compliance</div>
+        <div class="form-card-sub">Data classification · encryption · compliance frameworks</div>
+      </div>
+      <span class="form-card-badge badge-optional">OPTIONAL</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+      <div class="field-grid cols-2">
+        <div class="field">
+          <label class="field-label">Data Classification <span class="req">*</span></label>
+          <select>
+            <option value="">Select…</option>
+            <option>Public</option>
+            <option>Internal</option>
+            <option>Confidential</option>
+            <option>Restricted (highest sensitivity)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Does this process client data?</label>
+          <select>
+            <option value="">Select…</option>
+            <option>No — internal data only</option>
+            <option>Yes — contains client PII or matter data</option>
+            <option>Yes — financial/billing data</option>
+            <option>Yes — privileged legal communications</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:0.85rem">
+        <label class="field-label">Compliance Frameworks</label>
+        <div class="check-group horizontal">
+          <label class="check-item inline"><input type="checkbox"> PCI-DSS</label>
+          <label class="check-item inline"><input type="checkbox"> SOC 2 Type II</label>
+          <label class="check-item inline"><input type="checkbox"> GDPR</label>
+          <label class="check-item inline"><input type="checkbox"> FedRAMP</label>
+          <label class="check-item inline"><input type="checkbox"> HIPAA</label>
+          <label class="check-item inline"><input type="checkbox"> CCPA</label>
+          <label class="check-item inline"><input type="checkbox"> ISO 27001</label>
+          <label class="check-item inline"><input type="checkbox"> None</label>
+        </div>
+      </div>
+      <div class="field-grid cols-2" style="margin-top:0.85rem">
+        <div class="field">
+          <label class="field-label">Encryption at Rest</label>
+          <select>
+            <option>Required — AWS managed key (SSE-S3)</option>
+            <option>Required — Customer managed key (CMK)</option>
+            <option>Not required (justification below)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Encryption in Transit</label>
+          <select>
+            <option selected>Required — TLS 1.2+ everywhere</option>
+            <option>Required — TLS 1.3 minimum</option>
+            <option>Not required (justification below)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Vulnerability Scanning</label>
+          <select>
+            <option>Amazon Inspector (recommended)</option>
+            <option>Qualys / Tenable (existing tooling)</option>
+            <option>Not required</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Threat Detection</label>
+          <select>
+            <option>AWS GuardDuty (standard)</option>
+            <option>GuardDuty + Security Hub</option>
+            <option>Not required</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SECTION 8 — ADDITIONAL COMMENTS
+       ════════════════════════════════════════════ -->
+  <div class="form-card collapsed" data-section="7" id="sec7">
+    <div class="form-card-header" onclick="toggleCard(this)">
+      <div class="form-card-icon">💬</div>
+      <div class="form-card-title-wrap">
+        <div class="form-card-title">Section 8 — Additional Comments &amp; Attachments</div>
+        <div class="form-card-sub">Anything not covered above</div>
+      </div>
+      <span class="form-card-badge badge-optional">OPTIONAL</span>
+      <span class="form-card-chevron">▾</span>
+    </div>
+    <div class="form-card-body">
+      <div class="field-grid cols-1">
+        <div class="field">
+          <label class="field-label">Additional Context / Requirements</label>
+          <textarea placeholder="Any architectural decisions, vendor integrations, external connectivity, special requirements, or constraints not captured above…" rows="5"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Architecture Diagram / Reference URL</label>
+          <input type="url" placeholder="https://… (Confluence, Lucidchart, draw.io, etc.)">
+          <div class="field-hint">Link to as-built or future-state diagram — required for production requests</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Related Tickets / Change Requests</label>
+          <input type="text" placeholder="e.g., JIRA-4521, CHG-0892">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       SUBMIT
+       ════════════════════════════════════════════ -->
+  <div class="submit-area">
+    <div class="submit-info">
+      <strong>Ready to submit?</strong>
+      The EA &amp; Infrastructure team will triage within 3 business days and schedule a scoping call. Production environment requests are routed to the ARB queue for review before provisioning begins.
+    </div>
+    <div class="submit-actions">
+      <button class="btn-secondary">Save Draft</button>
+      <button class="btn-ghost">Preview JSON</button>
+      <button class="btn-primary" onclick="submitForm()">Submit Environment Request →</button>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- SUCCESS OVERLAY -->
+<div id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Request Submitted</div>
+    <div class="success-id" id="successId">ENV-2026-012</div>
+    <div class="success-sub">Your environment provisioning request has been submitted to the Technology Infrastructure team. You will receive a confirmation email within 1 business day and a scoping call will be scheduled within 3 business days.</div>
+    <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" onclick="closeSuccess()">View Dashboard →</button>
+      <button class="btn-secondary" onclick="closeSuccess()">Submit Another</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Step navigation ──────────────────────── */
+let currentStep = 0;
+function goStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.remove('active');
+    if (i < n) s.classList.add('done');
+    else if (i === n) { s.classList.add('active'); s.classList.remove('done'); }
+    else s.classList.remove('done');
+  });
+  const target = document.getElementById('sec' + n);
+  if (target) {
+    // expand target, collapse others
+    document.querySelectorAll('.form-card').forEach(c => {
+      if (c === target) c.classList.remove('collapsed');
+      // else c.classList.add('collapsed'); // optional: collapse others
+    });
+    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+}
+
+/* ── Card collapse toggle ─────────────────── */
+function toggleCard(header) {
+  const card = header.closest('.form-card');
+  card.classList.toggle('collapsed');
+}
+
+/* ── Env tab switching ────────────────────── */
+function switchEnv(env) {
+  document.querySelectorAll('.env-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.env-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.env-tab[data-env="${env}"]`).classList.add('active');
+  document.getElementById('env-' + env).classList.add('active');
+}
+
+function markConfigured(env, checked) {
+  const tab = document.querySelector(`.env-tab[data-env="${env}"]`);
+  if (checked) tab.classList.add('configured');
+  else tab.classList.remove('configured');
+}
+
+/* ── Lease picker ─────────────────────────── */
+function selectLease(el, val) {
+  document.querySelectorAll('.lease-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('customDateField').style.display = val === 'custom' ? 'block' : 'none';
+}
+
+/* ── DB toggle ────────────────────────────── */
+function toggleDb(val) {
+  document.getElementById('dbFields').style.display = val === 'yes' ? 'block' : 'none';
+}
+// Init
+document.getElementById('dbFields').style.display = 'none';
+
+/* ── Submit ────────────────────────────────── */
+function submitForm() {
+  const num = Math.floor(Math.random() * 30) + 10;
+  document.getElementById('successId').textContent = `ENV-2026-0${num}`;
+  document.getElementById('successOverlay').classList.add('show');
+  // Mark all steps done
+  document.querySelectorAll('.step').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
+}
+function closeSuccess() {
+  document.getElementById('successOverlay').classList.remove('show');
+}
+
+/* ── Intersection observer for stepper ─────── */
+const stepSections = document.querySelectorAll('.form-card[data-section]');
+const stepObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const n = parseInt(e.target.dataset.section);
+      document.querySelectorAll('.step').forEach((s, i) => {
+        s.classList.remove('active');
+        if (i < n) s.classList.add('done');
+        else if (i === n) { s.classList.add('active'); s.classList.remove('done'); }
+        else s.classList.remove('done');
+      });
+    }
+  });
+}, { threshold: 0.3, rootMargin: '-80px 0px -40% 0px' });
+stepSections.forEach(s => stepObserver.observe(s));
+</script>
+</body>
+</html>
