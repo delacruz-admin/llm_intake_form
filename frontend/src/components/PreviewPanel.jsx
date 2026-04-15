@@ -3,9 +3,7 @@ import { submitRequest } from '../api/client';
 
 const SECTIONS = [
   {
-    id: 'A1',
-    icon: '👤',
-    label: 'A1 · Requestor Information',
+    id: 'A1', icon: '👤', label: 'A1 · Requestor Information',
     fields: [
       { key: 'team', label: 'Team / Department' },
       { key: 'poc_name', label: 'Primary POC' },
@@ -14,46 +12,103 @@ const SECTIONS = [
     ],
   },
   {
-    id: 'A2',
-    icon: '📋',
-    label: 'A2 · Request Details',
+    id: 'A2', icon: '📋', label: 'A2 · Request Details',
     fields: [
       { key: 'request_type', label: 'Request Type' },
       { key: 'app_type', label: 'Application Type' },
       { key: 'title', label: 'Title' },
       { key: 'description', label: 'Description' },
+      { key: 'deliverables', label: 'Deliverables' },
     ],
   },
   {
-    id: 'A3',
-    icon: '💼',
-    label: 'A3 · Business Context & Impact',
+    id: 'A3', icon: '💼', label: 'A3 · Business Context & Impact',
     fields: [
       { key: 'business_outcomes', label: 'Business Outcomes' },
       { key: 'criticality', label: 'Business Criticality' },
       { key: 'impact_if_not_done', label: 'Impact if Not Implemented' },
+      { key: 'impact_scale', label: 'Scale of Impact' },
       { key: 'need_date', label: 'Anticipated Need Date' },
     ],
   },
   {
-    id: 'A4',
-    icon: '🔗',
-    label: 'A4 · Dependencies & Stakeholders',
+    id: 'A4', icon: '🔗', label: 'A4 · Dependencies',
     fields: [
-      { key: 'vendor_name', label: 'Vendor / Third Party' },
+      { key: 'vendor_involved', label: 'Vendor Involved' },
+      { key: 'vendor_name', label: 'Vendor Name' },
+      { key: 'system_dependencies', label: 'System Dependencies' },
       { key: 'discovery_stakeholders', label: 'Discovery Stakeholders' },
+    ],
+  },
+  {
+    id: 'B', icon: '📎', label: 'B · Attachments',
+    fields: [
+      { key: '_attachment_logical_diagram', label: 'Logical Diagram (required)' },
+      { key: '_attachment_vendor_docs', label: 'Vendor Documents (optional)' },
+    ],
+  },
+  {
+    id: 'C1', icon: '🌐', label: 'C1 · Environments',
+    fields: [
+      { key: 'environments_needed', label: 'Environments' },
+      { key: 'hosting_preference', label: 'Hosting Preference' },
+      { key: 'new_aws_account', label: 'New AWS Account' },
+      { key: 'aws_account_name', label: 'AWS Account Name' },
+      { key: 'aws_region', label: 'AWS Region' },
+    ],
+  },
+  {
+    id: 'C2', icon: '🔑', label: 'C2 · IAM',
+    fields: [
+      { key: 'sso_needed', label: 'SSO Integration' },
+      { key: 'access_patterns', label: 'Access Patterns' },
+    ],
+  },
+  {
+    id: 'C3', icon: '🏗️', label: 'C3 · Architecture',
+    fields: [
+      { key: 'deployment_model', label: 'Deployment Model' },
+      { key: 'compute_needed', label: 'Compute Requirements' },
+      { key: 'database_needed', label: 'Database Requirements' },
+      { key: 'storage_needed', label: 'Storage Requirements' },
+    ],
+  },
+  {
+    id: 'C4', icon: '🔌', label: 'C4 · Network',
+    fields: [
+      { key: 'connectivity_type', label: 'Connectivity' },
+      { key: 'vpc_requirements', label: 'VPC Requirements' },
+    ],
+  },
+  {
+    id: 'C5', icon: '🛡️', label: 'C5 · Security',
+    fields: [
+      { key: 'compliance_frameworks', label: 'Compliance Frameworks' },
+      { key: 'data_classification', label: 'Data Classification' },
+      { key: 'encryption_requirements', label: 'Encryption' },
+    ],
+  },
+  {
+    id: 'C6', icon: '💬', label: 'C6 · Comments',
+    fields: [
+      { key: 'additional_comments', label: 'Additional Comments' },
     ],
   },
 ];
 
-const ALL_FIELD_KEYS = SECTIONS.flatMap((s) => s.fields.map((f) => f.key));
+const REQUIRED_KEYS = [
+  'team', 'poc_name', 'poc_email', 'exec_sponsor',
+  'request_type', 'app_type', 'title', 'description',
+  'business_outcomes', 'criticality', 'impact_if_not_done', 'need_date',
+  'discovery_stakeholders',
+];
 
 function CriticalityPill({ value }) {
   const styles = {
     Emergency: 'bg-red-100 border-red-300 text-red-800',
     High: 'bg-amber-50 border-amber-300 text-amber-700',
     Medium: 'bg-surface-tertiary border-border-strong text-text-dim',
-    Low: 'bg-semantic-green-bg border-green-300 text-semantic-green',
+    Low: 'bg-green-50 border-green-300 text-green-800',
   };
   return (
     <span className={`inline-block text-[0.63rem] font-semibold px-2 py-0.5 rounded-sm border ${styles[value] || styles.Medium}`}>
@@ -67,16 +122,22 @@ export default function PreviewPanel({ fields, sessionId }) {
   const [submitted, setSubmitted] = useState(null);
   const [toast, setToast] = useState('');
 
-  const filledCount = ALL_FIELD_KEYS.filter((k) => fields[k]).length;
-  const pct = Math.round((filledCount / ALL_FIELD_KEYS.length) * 100);
+  const filledRequired = REQUIRED_KEYS.filter((k) => fields[k]).length;
+  const pct = Math.round((filledRequired / REQUIRED_KEYS.length) * 100);
   const ready = pct >= 85;
 
   function isSectionComplete(section) {
+    // Attachment and optional sections don't block completion
+    if (section.id.startsWith('B') || section.id.startsWith('C')) return false;
     return section.fields.every((f) => fields[f.key]);
   }
 
   function isSectionActive(section) {
     return section.fields.some((f) => fields[f.key]) && !isSectionComplete(section);
+  }
+
+  function hasAnyData(section) {
+    return section.fields.some((f) => fields[f.key]);
   }
 
   async function handleSubmit() {
@@ -95,6 +156,11 @@ export default function PreviewPanel({ fields, sessionId }) {
     }
   }
 
+  // Only show sections that have data or are Part A (always visible)
+  const visibleSections = SECTIONS.filter(
+    (s) => s.id.startsWith('A') || hasAnyData(s)
+  );
+
   return (
     <div className="flex-1 flex flex-col bg-surface-secondary overflow-hidden">
       {/* Header */}
@@ -103,7 +169,7 @@ export default function PreviewPanel({ fields, sessionId }) {
           Intake Preview
         </div>
         <div className="flex items-center justify-between gap-2">
-          <div className="font-serif text-[0.92rem] text-text">Part A — Required Intake</div>
+          <div className="font-serif text-[0.92rem] text-text">Technology Infrastructure Request</div>
           <div className="font-mono text-[0.6rem] text-text-muted bg-surface-tertiary px-2 py-0.5 rounded-sm border border-border">
             {submitted || 'ARB-DRAFT'}
           </div>
@@ -117,13 +183,15 @@ export default function PreviewPanel({ fields, sessionId }) {
           </div>
           <div className="font-mono text-[0.63rem] text-cooley-red min-w-[26px] text-right">{pct}%</div>
         </div>
+        <div className="text-[0.6rem] text-text-muted mt-1">Part A required fields: {filledRequired}/{REQUIRED_KEYS.length}</div>
       </div>
 
       {/* Sections */}
       <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-2.5">
-        {SECTIONS.map((section) => {
+        {visibleSections.map((section) => {
           const complete = isSectionComplete(section);
           const active = isSectionActive(section);
+          const isOptional = section.id.startsWith('B') || section.id.startsWith('C');
           return (
             <div
               key={section.id}
@@ -136,8 +204,11 @@ export default function PreviewPanel({ fields, sessionId }) {
                 <span className="text-[0.63rem] font-semibold uppercase tracking-wider text-text-dim flex-1 font-mono">
                   {section.label}
                 </span>
+                {isOptional && (
+                  <span className="text-[0.55rem] font-mono text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded-sm border border-border">OPT</span>
+                )}
                 {complete && (
-                  <span className="text-[0.63rem] font-semibold text-semantic-green">✓ Complete</span>
+                  <span className="text-[0.63rem] font-semibold text-semantic-green">✓</span>
                 )}
               </div>
               <div className="px-3 py-2.5 flex flex-col gap-1.5">
@@ -146,11 +217,7 @@ export default function PreviewPanel({ fields, sessionId }) {
                     <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted leading-tight">
                       {f.label}
                     </div>
-                    <div
-                      className={`text-[0.78rem] min-h-[16px] ${
-                        fields[f.key] ? 'text-text' : 'text-text-muted italic'
-                      }`}
-                    >
+                    <div className={`text-[0.78rem] min-h-[16px] ${fields[f.key] ? 'text-text' : 'text-text-muted italic'}`}>
                       {f.key === 'criticality' && fields[f.key] ? (
                         <CriticalityPill value={fields[f.key]} />
                       ) : (
@@ -180,9 +247,8 @@ export default function PreviewPanel({ fields, sessionId }) {
         </button>
       </div>
 
-      {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 bg-white border border-border border-l-[3px] border-l-semantic-green rounded-cooley px-4 py-2.5 text-[0.76rem] text-text-dim flex items-center gap-2 shadow-lg z-50 animate-in">
+        <div className="fixed bottom-6 right-6 bg-white border border-border border-l-[3px] border-l-semantic-green rounded-cooley px-4 py-2.5 text-[0.76rem] text-text-dim flex items-center gap-2 shadow-lg z-50">
           <span className="text-semantic-green">✓</span>
           {toast}
         </div>

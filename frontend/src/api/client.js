@@ -83,3 +83,26 @@ export function addNote(requestId, text, author) {
 export function getNotes(requestId) {
   return request(`/requests/${requestId}/notes`);
 }
+
+/** Get a presigned upload URL for a file attachment. */
+export function getUploadUrl(requestId, filename, contentType, category = 'general') {
+  return request(`/requests/${requestId}/attachments`, {
+    method: 'POST',
+    body: JSON.stringify({ filename, content_type: contentType, category }),
+  });
+}
+
+/** Upload a file directly to S3 using a presigned URL. */
+export async function uploadFileToS3(presignedUrl, file) {
+  const response = await fetch(presignedUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+}
+
+/** List attachments for a request. */
+export function listAttachments(requestId) {
+  return request(`/requests/${requestId}/attachments`);
+}

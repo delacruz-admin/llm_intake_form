@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { sendChatMessage } from '../api/client';
+import { sendChatMessage, getUploadUrl, uploadFileToS3 } from '../api/client';
 
 export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,6 +57,35 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend(input);
+    }
+  }
+
+  async function handleFileUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !sessionId) return;
+    setUploading(true);
+
+    onMessages((prev) => [...prev, { role: 'user', content: `📎 Uploading: ${file.name}` }]);
+
+    try {
+      // We need a request_id to attach files. For now, use session_id as a temp reference.
+      const data = await getUploadUrl(
+        sessionId,
+        file.name,
+        file.type || 'application/octet-stream',
+        file.name.toLowerCase().includes('diagram') ? 'logical-diagram' : 'vendor-doc'
+      );
+      await uploadFileToS3(data.upload_url, file);
+
+      onMessages((prev) => [...prev, { role: 'assistant', content: `Got it — "${file.name}" uploaded successfully. 📎` }]);
+
+      // Tell the chat model about the upload
+      await handleSend(`[File uploaded: ${file.name}]`, true);
+    } catch (err) {
+      onMessages((prev) => [...prev, { role: 'assistant', content: `Upload failed: ${err.message}` }]);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
@@ -119,6 +150,21 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
       {/* Input */}
       <div className="px-6 py-3 border-t border-border bg-surface-secondary shrink-0">
         <div className="flex gap-2 items-end">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            className="hidden"
+            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.svg,.pptx,.xlsx,.txt,.drawio,.vsdx"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || !sessionId}
+            className="h-[38px] px-2.5 bg-surface-secondary border border-border rounded-cooley text-text-muted hover:text-cooley-red hover:border-cooley-red-mid transition-colors disabled:opacity-50"
+            title="Attach file"
+          >
+            📎
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}

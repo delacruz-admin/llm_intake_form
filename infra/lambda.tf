@@ -170,3 +170,93 @@ resource "aws_lambda_function" "requests" {
 
   tags = local.common_tags
 }
+
+
+# ── Uploads Lambda ─────────────────────────────────────────
+
+resource "aws_iam_role" "uploads_lambda" {
+  name = "${local.name_prefix}-uploads-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "uploads_lambda" {
+  name = "${local.name_prefix}-uploads-lambda-policy"
+  role = aws_iam_role.uploads_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+        ]
+        Resource = "${aws_s3_bucket.attachments.arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:Query",
+        ]
+        Resource = [
+          aws_dynamodb_table.requests.arn,
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+    ]
+  })
+}
+
+data "archive_file" "uploads_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/../backend/functions/uploads"
+  output_path = "${path.module}/.build/uploads.zip"
+}
+
+resource "aws_lambda_function" "uploads" {
+  function_name    = "${local.name_prefix}-uploads"
+  role             = aws_iam_role.uploads_lambda.arn
+  handler          = "app.handler"
+  runtime          = "python3.12"
+  timeout          = 30
+  memory_size      = 256
+  filename         = data.archive_file.uploads_lambda.output_path
+  source_code_hash = data.archive_file.uploads_lambda.output_base64sha256
+
+  environment {
+    variables = {
+      ATTACHMENTS_BUCKET = aws_s3_bucket.attachments.id
+      REQUESTS_TABLE     = aws_dynamodb_table.requests.name
+    }
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_lambda_permission" "uploads_apigw" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.uploads.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}

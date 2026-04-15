@@ -69,3 +69,38 @@ resource "aws_dynamodb_table" "requests" {
 
   tags = local.common_tags
 }
+
+
+# ── S3 Bucket (Intake Attachments) ─────────────────────────
+
+resource "aws_s3_bucket" "attachments" {
+  bucket = "${local.name_prefix}-attachments-${data.aws_caller_identity.current.account_id}"
+  tags   = local.common_tags
+}
+
+resource "aws_s3_bucket_versioning" "attachments" {
+  bucket = aws_s3_bucket.attachments.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "attachments" {
+  bucket = aws_s3_bucket.attachments.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_cors_configuration" "attachments" {
+  bucket = aws_s3_bucket.attachments.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "GET"]
+    allowed_origins = ["*"]
+    max_age_seconds = 3600
+  }
+}
