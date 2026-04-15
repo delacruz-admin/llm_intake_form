@@ -110,7 +110,7 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-scroll px-5 py-5 flex flex-col gap-4">
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-2.5 items-start ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
             <div

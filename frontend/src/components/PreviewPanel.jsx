@@ -189,7 +189,7 @@ export default function PreviewPanel({ fields, sessionId }) {
       </div>
 
       {/* Sections */}
-      <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-2.5">
+      <div className="flex-1 overflow-y-scroll p-3.5 flex flex-col gap-2.5">
         {visibleSections.map((section) => {
           const complete = isSectionComplete(section);
           const active = isSectionActive(section);
