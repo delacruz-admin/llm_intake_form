@@ -15,7 +15,10 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
   // Send initial greeting on mount
   useEffect(() => {
     if (messages.length === 0) {
-      handleSend('__INIT__: Start the intake conversation now. Begin your greeting as the ARB Intake Assistant.', true);
+      const initMsg = user?.name
+        ? `__INIT__: The logged-in user's name is ${user.name}. Greet them by first name and begin the intake conversation.`
+        : '__INIT__: Start the intake conversation now. Begin your greeting as the ARB Intake Assistant.';
+      handleSend(initMsg, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
