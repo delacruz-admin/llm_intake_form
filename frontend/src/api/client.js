@@ -62,3 +62,24 @@ export function listRequests(status = '') {
 export function getRequest(requestId) {
   return request(`/requests/${requestId}`);
 }
+
+/** Update a request (status, assigned_to, criticality, target_date). */
+export function updateRequest(requestId, updates) {
+  return request(`/requests/${requestId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+}
+
+/** Add a triage note to a request. */
+export function addNote(requestId, text, author) {
+  return request(`/requests/${requestId}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ text, author }),
+  });
+}
+
+/** Get all triage notes for a request. */
+export function getNotes(requestId) {
+  return request(`/requests/${requestId}/notes`);
+}

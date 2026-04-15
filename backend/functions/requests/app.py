@@ -21,9 +21,17 @@ def handler(event, context):
     method = event.get("httpMethod", "")
     path_params = event.get("pathParameters") or {}
 
+    resource = event.get("resource", "")
+
     try:
-        if method == "POST":
+        if method == "POST" and resource == "/requests":
             return submit_request(event)
+        elif method == "PUT" and "id" in path_params:
+            return update_request(path_params["id"], event)
+        elif method == "POST" and "id" in path_params and resource.endswith("/notes"):
+            return add_note(path_params["id"], event)
+        elif method == "GET" and "id" in path_params and resource.endswith("/notes"):
+            return get_notes(path_params["id"])
         elif method == "GET" and "id" in path_params:
             return get_request(path_params["id"])
         elif method == "GET":
@@ -139,6 +147,116 @@ def list_requests(event):
         items.append(item)
 
     return _response(200, {"requests": items, "count": len(items)})
+
+
+VALID_STATUSES = [
+    "submitted", "in-triage", "in-discovery", "in-backlog",
+    "in-progress", "complete", "deferred",
+]
+
+VALID_CRITICALITIES = ["Emergency", "High", "Medium", "Low"]
+
+
+def update_request(request_id, event):
+    """Update request fields: status, assigned_to, criticality, target_date."""
+    body = json.loads(event.get("body", "{}"))
+
+    # Build update expression dynamically from allowed fields
+    allowed = {}
+    if "status" in body:
+        if body["status"] not in VALID_STATUSES:
+            return _response(400, {"error": f"Invalid status. Must be one of: {VALID_STATUSES}"})
+        allowed["status"] = body["status"]
+    if "assigned_to" in body:
+        allowed["assigned_to"] = body["assigned_to"]
+    if "criticality" in body:
+        if body["criticality"] not in VALID_CRITICALITIES:
+            return _response(400, {"error": f"Invalid criticality. Must be one of: {VALID_CRITICALITIES}"})
+        allowed["criticality"] = body["criticality"]
+    if "target_date" in body:
+        allowed["target_date"] = body["target_date"]
+
+    if not allowed:
+        return _response(400, {"error": "No valid fields to update"})
+
+    allowed["updated_at"] = datetime.utcnow().isoformat()
+
+    # Build the update expression
+    update_parts = []
+    attr_names = {}
+    attr_values = {}
+    for i, (k, v) in enumerate(allowed.items()):
+        update_parts.append(f"#{k} = :v{i}")
+        attr_names[f"#{k}"] = k
+        attr_values[f":v{i}"] = v
+
+    # Also update GSI1SK if status changed
+    if "status" in allowed:
+        update_parts.append("GSI1SK = :gsi1sk")
+        attr_values[":gsi1sk"] = f"STATUS#{allowed['status']}#{allowed['updated_at']}"
+
+    table.update_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": "META"},
+        UpdateExpression="SET " + ", ".join(update_parts),
+        ExpressionAttributeNames=attr_names,
+        ExpressionAttributeValues=attr_values,
+        ConditionExpression="attribute_exists(PK)",
+    )
+
+    return _response(200, {
+        "request_id": request_id,
+        "updated": list(allowed.keys()),
+        "message": "Request updated.",
+    })
+
+
+def add_note(request_id, event):
+    """Add a triage note to a request."""
+    body = json.loads(event.get("body", "{}"))
+    text = body.get("text", "").strip()
+    author = body.get("author", "Unknown")
+
+    if not text:
+        return _response(400, {"error": "text is required"})
+
+    now = datetime.utcnow().isoformat()
+    note_id = uuid.uuid4().hex[:8]
+
+    table.put_item(
+        Item={
+            "PK": f"REQUEST#{request_id}",
+            "SK": f"NOTE#{now}#{note_id}",
+            "note_id": note_id,
+            "text": text,
+            "author": author,
+            "created_at": now,
+        }
+    )
+
+    return _response(201, {
+        "note_id": note_id,
+        "message": "Note added.",
+    })
+
+
+def get_notes(request_id):
+    """Get all triage notes for a request."""
+    response = table.query(
+        KeyConditionExpression="PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues={
+            ":pk": f"REQUEST#{request_id}",
+            ":sk": "NOTE#",
+        },
+        ScanIndexForward=False,
+    )
+
+    notes = []
+    for item in response.get("Items", []):
+        item.pop("PK", None)
+        item.pop("SK", None)
+        notes.append(item)
+
+    return _response(200, {"notes": notes, "count": len(notes)})
 
 
 def _response(status_code: int, body: dict) -> dict:

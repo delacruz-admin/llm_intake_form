@@ -247,11 +247,119 @@ resource "aws_api_gateway_integration_response" "requests_id_options" {
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,PUT,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
 
   depends_on = [aws_api_gateway_integration.requests_id_options]
+}
+
+# ── PUT /requests/{id} ─────────────────────────────────────
+
+resource "aws_api_gateway_method" "requests_id_put" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "requests_id_put" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.requests_id.id
+  http_method             = aws_api_gateway_method.requests_id_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
+}
+
+# ── /requests/{id}/notes resource ──────────────────────────
+
+resource "aws_api_gateway_resource" "requests_id_notes" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.requests_id.id
+  path_part   = "notes"
+}
+
+resource "aws_api_gateway_method" "notes_post" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id_notes.id
+  http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "notes_post" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.requests_id_notes.id
+  http_method             = aws_api_gateway_method.notes_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
+}
+
+resource "aws_api_gateway_method" "notes_get" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id_notes.id
+  http_method   = "GET"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "notes_get" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.requests_id_notes.id
+  http_method             = aws_api_gateway_method.notes_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
+}
+
+# CORS OPTIONS for /requests/{id}/notes
+resource "aws_api_gateway_method" "notes_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id_notes.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "notes_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.requests_id_notes.id
+  http_method = aws_api_gateway_method.notes_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "notes_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.requests_id_notes.id
+  http_method = aws_api_gateway_method.notes_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "notes_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.requests_id_notes.id
+  http_method = aws_api_gateway_method.notes_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+
+  depends_on = [aws_api_gateway_integration.notes_options]
 }
 
 # ── Deployment & Stage ─────────────────────────────────────
@@ -264,14 +372,21 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.chat.id,
       aws_api_gateway_resource.requests.id,
       aws_api_gateway_resource.requests_id.id,
+      aws_api_gateway_resource.requests_id_notes.id,
       aws_api_gateway_method.chat_post.id,
       aws_api_gateway_method.requests_post.id,
       aws_api_gateway_method.requests_get.id,
       aws_api_gateway_method.requests_id_get.id,
+      aws_api_gateway_method.requests_id_put.id,
+      aws_api_gateway_method.notes_post.id,
+      aws_api_gateway_method.notes_get.id,
       aws_api_gateway_integration.chat_post.id,
       aws_api_gateway_integration.requests_post.id,
       aws_api_gateway_integration.requests_get.id,
       aws_api_gateway_integration.requests_id_get.id,
+      aws_api_gateway_integration.requests_id_put.id,
+      aws_api_gateway_integration.notes_post.id,
+      aws_api_gateway_integration.notes_get.id,
     ]))
   }
 

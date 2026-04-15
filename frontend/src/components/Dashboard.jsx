@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { listRequests } from '../api/client';
+import { listRequests, updateRequest, addNote, getNotes } from '../api/client';
+import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
   submitted: { label: 'Submitted', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
@@ -8,6 +9,7 @@ const STATUS_CONFIG = {
   'in-backlog': { label: 'In Backlog', dot: 'bg-blue-400', bg: 'bg-blue-50 border-blue-200 text-blue-800' },
   'in-progress': { label: 'In Progress', dot: 'bg-blue-500', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
   complete: { label: 'Complete', dot: 'bg-green-500', bg: 'bg-green-50 border-green-300 text-green-800' },
+  deferred: { label: 'Deferred', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-muted' },
 };
 
 const CRIT_CONFIG = {
@@ -15,6 +17,16 @@ const CRIT_CONFIG = {
   High: 'bg-amber-50 border-amber-300 text-amber-700',
   Medium: 'bg-surface-tertiary border-border-strong text-text-dim',
   Low: 'bg-green-50 border-green-300 text-green-800',
+};
+
+const STATUS_TRANSITIONS = {
+  submitted: ['in-triage'],
+  'in-triage': ['in-discovery', 'in-backlog', 'deferred'],
+  'in-discovery': ['in-progress', 'in-backlog', 'deferred'],
+  'in-backlog': ['in-progress', 'deferred'],
+  'in-progress': ['complete', 'deferred'],
+  complete: [],
+  deferred: ['in-triage'],
 };
 
 function StatusBadge({ status }) {
@@ -40,6 +52,250 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function TriageModal({ request, onClose, onUpdated }) {
+  const user = getUser();
+  const [notes, setNotes] = useState([]);
+  const [noteText, setNoteText] = useState('');
+  const [assignedTo, setAssignedTo] = useState(request.assigned_to || '');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    loadNotes();
+  }, []);
+
+  async function loadNotes() {
+    try {
+      const data = await getNotes(request.request_id);
+      setNotes(data.notes || []);
+    } catch { /* ignore */ }
+  }
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  }
+
+  async function handleStatusChange(newStatus) {
+    setSaving(true);
+    try {
+      await updateRequest(request.request_id, { status: newStatus });
+      showToast(`Status → ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+      onUpdated();
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAssign() {
+    if (!assignedTo.trim()) return;
+    setSaving(true);
+    try {
+      await updateRequest(request.request_id, { assigned_to: assignedTo.trim() });
+      showToast(`Assigned to ${assignedTo.trim()}`);
+      onUpdated();
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleCritChange(crit) {
+    setSaving(true);
+    try {
+      await updateRequest(request.request_id, { criticality: crit });
+      showToast(`Criticality → ${crit}`);
+      onUpdated();
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAddNote() {
+    if (!noteText.trim()) return;
+    setSaving(true);
+    try {
+      await addNote(request.request_id, noteText.trim(), user?.name || user?.email || 'Unknown');
+      setNoteText('');
+      await loadNotes();
+      showToast('Note added');
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const nextStatuses = STATUS_TRANSITIONS[request.status] || [];
+
+  return (
+    <div className="fixed inset-0 bg-black/35 backdrop-blur-sm z-[200] flex items-center justify-center p-8" onClick={onClose}>
+      <div className="bg-white border border-border border-t-[3px] border-t-cooley-red rounded-cooley w-full max-w-[680px] max-h-[88vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-start justify-between p-5 border-b border-border">
+          <div>
+            <div className="font-mono text-[0.65rem] text-text-muted mb-1">{request.request_id}</div>
+            <div className="font-serif text-lg text-text">{request.title || '(Untitled)'}</div>
+          </div>
+          <button onClick={onClose} className="text-text-muted hover:text-text text-lg">✕</button>
+        </div>
+
+        <div className="p-5 flex flex-col gap-5">
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Status</div>
+              <StatusBadge status={request.status} />
+            </div>
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Criticality</div>
+              {request.criticality ? <CritBadge value={request.criticality} /> : <span className="text-[0.82rem] text-text-dim">—</span>}
+            </div>
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Team</div>
+              <div className="text-[0.82rem] text-text font-semibold">{request.team || '—'}</div>
+            </div>
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">POC</div>
+              <div className="text-[0.82rem] text-text-dim">{request.poc_name || '—'} {request.poc_email ? `(${request.poc_email})` : ''}</div>
+            </div>
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Request Type</div>
+              <div className="text-[0.82rem] text-text-dim">{request.request_type || '—'}</div>
+            </div>
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Need Date</div>
+              <div className="text-[0.82rem] text-text-dim">{formatDate(request.need_date)}</div>
+            </div>
+          </div>
+
+          {request.description && (
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Description</div>
+              <div className="bg-surface-secondary border border-border rounded-cooley p-3 text-[0.8rem] text-text-dim leading-relaxed">{request.description}</div>
+            </div>
+          )}
+
+          {/* ── Triage Actions ──────────────────────── */}
+          <div className="border-t border-border pt-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Triage Actions</div>
+
+            {/* Status Transitions */}
+            {nextStatuses.length > 0 && (
+              <div className="mb-4">
+                <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-2">Move to</div>
+                <div className="flex gap-2 flex-wrap">
+                  {nextStatuses.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleStatusChange(s)}
+                      disabled={saving}
+                      className="text-[0.74rem] font-semibold text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-3 py-1.5 hover:bg-cooley-red hover:text-white transition-colors disabled:opacity-50"
+                    >
+                      {STATUS_CONFIG[s]?.label || s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assign To */}
+            <div className="mb-4">
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-2">Assign to</div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={assignedTo}
+                  onChange={(e) => setAssignedTo(e.target.value)}
+                  placeholder="e.g., J. Patel"
+                  className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-1.5 px-3 focus:outline-none focus:border-cooley-red"
+                />
+                <button
+                  onClick={handleAssign}
+                  disabled={saving || !assignedTo.trim()}
+                  className="text-[0.74rem] font-semibold text-white bg-cooley-red rounded-cooley px-4 py-1.5 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+                >
+                  Assign
+                </button>
+              </div>
+              {request.assigned_to && (
+                <div className="text-[0.68rem] text-text-muted mt-1 font-mono">Currently: {request.assigned_to}</div>
+              )}
+            </div>
+
+            {/* Override Criticality */}
+            <div className="mb-4">
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-2">Override Criticality</div>
+              <div className="flex gap-2">
+                {['Emergency', 'High', 'Medium', 'Low'].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => handleCritChange(c)}
+                    disabled={saving || request.criticality === c}
+                    className={`text-[0.68rem] font-semibold px-2.5 py-1 rounded-sm border transition-colors disabled:opacity-30 ${CRIT_CONFIG[c]}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Triage Notes ────────────────────────── */}
+          <div className="border-t border-border pt-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Triage Notes</div>
+
+            <div className="flex gap-2 mb-3">
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add an internal note…"
+                rows={2}
+                className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-2 px-3 resize-none focus:outline-none focus:border-cooley-red"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={saving || !noteText.trim()}
+                className="self-end text-[0.74rem] font-semibold text-white bg-cooley-red rounded-cooley px-4 py-2 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+
+            {notes.length === 0 ? (
+              <div className="text-[0.78rem] text-text-muted italic">No notes yet.</div>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto">
+                {notes.map((n) => (
+                  <div key={n.note_id} className="bg-surface-secondary border border-border rounded-cooley p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-mono text-[0.65rem] font-semibold text-text-dim">{n.author}</span>
+                      <span className="font-mono text-[0.6rem] text-text-muted">{formatDate(n.created_at)}</span>
+                    </div>
+                    <div className="text-[0.8rem] text-text-dim leading-relaxed">{n.text}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Toast inside modal */}
+        {toast && (
+          <div className="mx-5 mb-4 bg-semantic-green-bg border border-green-300 rounded-cooley px-3 py-2 text-[0.76rem] text-semantic-green flex items-center gap-2">
+            <span>✓</span> {toast}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard({ onNavigate }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,9 +304,7 @@ export default function Dashboard({ onNavigate }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    loadRequests();
-  }, []);
+  useEffect(() => { loadRequests(); }, []);
 
   async function loadRequests() {
     setLoading(true);
@@ -61,6 +315,15 @@ export default function Dashboard({ onNavigate }) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function handleUpdated() {
+    loadRequests();
+    // Refresh the selected item too
+    if (selected) {
+      const fresh = requests.find((r) => r.request_id === selected.request_id);
+      if (fresh) setSelected(fresh);
     }
   }
 
@@ -91,7 +354,6 @@ export default function Dashboard({ onNavigate }) {
           <div className="font-serif text-2xl text-text mb-0.5">Intake Dashboard</div>
           <div className="text-[0.8rem] text-text-muted">Architecture Review Board · Technology Infrastructure</div>
 
-          {/* Stat Cards */}
           <div className="grid grid-cols-6 gap-3 mt-6">
             {[
               { key: 'all', label: 'Total', sub: 'All requests', color: 'text-text', border: 'border-t-border' },
@@ -122,7 +384,6 @@ export default function Dashboard({ onNavigate }) {
         <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-1">All Requests</div>
         <div className="font-serif text-lg text-text mb-0.5">Request Register</div>
 
-        {/* Filters */}
         <div className="flex gap-2.5 items-center flex-wrap py-4 border-b border-border">
           <div className="flex-1 min-w-[180px] max-w-[260px] relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[0.78rem] pointer-events-none">⌕</span>
@@ -146,6 +407,7 @@ export default function Dashboard({ onNavigate }) {
             <option value="in-discovery">In Discovery</option>
             <option value="in-progress">In Progress</option>
             <option value="complete">Complete</option>
+            <option value="deferred">Deferred</option>
           </select>
           <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="text-[0.72rem] text-text-muted border border-border rounded-cooley px-2.5 py-1 hover:text-cooley-red hover:border-cooley-red-mid transition-colors">
             Reset
@@ -153,7 +415,6 @@ export default function Dashboard({ onNavigate }) {
           <span className="ml-auto font-mono text-[0.63rem] text-text-muted">{filtered.length} of {requests.length} requests</span>
         </div>
 
-        {/* Table */}
         <div className="bg-white border border-border rounded-cooley overflow-hidden mt-4">
           {loading ? (
             <div className="text-center py-12 text-text-muted text-[0.82rem]">Loading requests…</div>
@@ -167,14 +428,9 @@ export default function Dashboard({ onNavigate }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">ID</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">Request</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">Team</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">Type</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">Criticality</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">Status</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">Need Date</th>
-                  <th className="bg-surface-secondary py-2 px-4 text-right font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border"></th>
+                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'Assigned', 'Need Date', ''].map((h) => (
+                    <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -189,10 +445,11 @@ export default function Dashboard({ onNavigate }) {
                     <td className="py-2.5 px-4 text-[0.72rem] text-text-dim">{r.request_type || '—'}</td>
                     <td className="py-2.5 px-4">{r.criticality ? <CritBadge value={r.criticality} /> : '—'}</td>
                     <td className="py-2.5 px-4"><StatusBadge status={r.status} /></td>
+                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.assigned_to || '—'}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.need_date)}</td>
                     <td className="py-2.5 px-4 text-right">
                       <button className="text-[0.68rem] font-medium text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-2 py-0.5 hover:bg-cooley-red-mid transition-colors">
-                        Details
+                        Triage
                       </button>
                     </td>
                   </tr>
@@ -203,73 +460,12 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
-      {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 bg-black/35 backdrop-blur-sm z-[200] flex items-center justify-center p-8" onClick={() => setSelected(null)}>
-          <div className="bg-white border border-border border-t-[3px] border-t-cooley-red rounded-cooley w-full max-w-[600px] max-h-[82vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between p-5 border-b border-border">
-              <div>
-                <div className="font-mono text-[0.65rem] text-text-muted mb-1">{selected.request_id}</div>
-                <div className="font-serif text-lg text-text">{selected.title || '(Untitled)'}</div>
-              </div>
-              <button onClick={() => setSelected(null)} className="text-text-muted hover:text-text text-lg">✕</button>
-            </div>
-            <div className="p-5">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Status</div>
-                  <StatusBadge status={selected.status} />
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Criticality</div>
-                  {selected.criticality ? <CritBadge value={selected.criticality} /> : <span className="text-[0.82rem] text-text-dim">—</span>}
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Team</div>
-                  <div className="text-[0.82rem] text-text font-semibold">{selected.team || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">POC</div>
-                  <div className="text-[0.82rem] text-text-dim">{selected.poc_name || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Request Type</div>
-                  <div className="text-[0.82rem] text-text-dim">{selected.request_type || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">App Type</div>
-                  <div className="text-[0.82rem] text-text-dim">{selected.app_type || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Need Date</div>
-                  <div className="text-[0.82rem] text-text-dim">{formatDate(selected.need_date)}</div>
-                </div>
-                <div>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Submitted</div>
-                  <div className="text-[0.82rem] text-text-dim">{formatDate(selected.created_at)}</div>
-                </div>
-              </div>
-              {selected.description && (
-                <>
-                  <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Description</div>
-                  <div className="bg-surface-secondary border border-border rounded-cooley p-3 text-[0.8rem] text-text-dim leading-relaxed mb-4">{selected.description}</div>
-                </>
-              )}
-              {selected.business_outcomes && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Business Outcomes</div>
-                    <div className="text-[0.82rem] text-text-dim">{selected.business_outcomes}</div>
-                  </div>
-                  <div>
-                    <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Vendor</div>
-                    <div className="text-[0.82rem] text-text-dim">{selected.vendor_name || 'None'}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <TriageModal
+          request={selected}
+          onClose={() => setSelected(null)}
+          onUpdated={handleUpdated}
+        />
       )}
     </div>
   );
