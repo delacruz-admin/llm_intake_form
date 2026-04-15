@@ -109,24 +109,23 @@ def clean_response_text(text: str) -> str:
 
 
 def call_bedrock(messages: list) -> str:
-    """Invoke Bedrock with the conversation history."""
-    response = bedrock.invoke_model(
+    """Invoke Bedrock Converse API with the conversation history."""
+    # Bedrock Converse expects content as array of content blocks
+    formatted = [
+        {"role": m["role"], "content": [{"text": m["content"]}]}
+        for m in messages
+    ]
+
+    response = bedrock.converse(
         modelId=MODEL_ID,
-        contentType="application/json",
-        accept="application/json",
-        body=json.dumps(
-            {
-                "messages": messages,
-                "system": [{"text": SYSTEM_PROMPT}],
-                "inferenceConfig": {
-                    "maxTokens": 1000,
-                    "temperature": 0.7,
-                },
-            }
-        ),
+        messages=formatted,
+        system=[{"text": SYSTEM_PROMPT}],
+        inferenceConfig={
+            "maxTokens": 1000,
+            "temperature": 0.7,
+        },
     )
-    body = json.loads(response["body"].read())
-    return body["output"]["message"]["content"][0]["text"]
+    return response["output"]["message"]["content"][0]["text"]
 
 
 def handler(event, context):

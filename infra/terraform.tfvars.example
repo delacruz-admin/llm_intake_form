@@ -1,8 +1,0 @@
-# Copy to terraform.tfvars and customize
-
-aws_region            = "us-east-1"
-project_name          = "arb-intake"
-environment           = "dev"
-bedrock_model_id      = "amazon.nova-lite-v1:0"
-cognito_domain_prefix = "arb-intake"
-frontend_local_url    = "http://localhost:5173"
