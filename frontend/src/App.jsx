@@ -59,6 +59,7 @@ export default function App() {
             onFieldsUpdate={(newFields) =>
               setFields((prev) => ({ ...prev, ...newFields }))
             }
+            user={user}
           />
           <PreviewPanel fields={fields} sessionId={sessionId} />
         </div>

@@ -37,10 +37,15 @@ async function request(path, options = {}) {
 }
 
 /** Send a chat message and get the assistant response + extracted fields. */
-export function sendChatMessage(sessionId, message) {
+export function sendChatMessage(sessionId, message, user = null) {
   return request('/chat', {
     method: 'POST',
-    body: JSON.stringify({ session_id: sessionId, message }),
+    body: JSON.stringify({
+      session_id: sessionId,
+      message,
+      user_name: user?.name || '',
+      user_email: user?.email || '',
+    }),
   });
 }
 

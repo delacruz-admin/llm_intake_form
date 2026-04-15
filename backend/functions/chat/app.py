@@ -192,18 +192,19 @@ def clean_response_text(text: str) -> str:
     return re.sub(r"<extracted_fields>.*?</extracted_fields>", "", text, flags=re.DOTALL).strip()
 
 
-def call_bedrock(messages: list) -> str:
+def call_bedrock(messages: list, user_context: str = "") -> str:
     """Invoke Bedrock Converse API with the conversation history."""
-    # Bedrock Converse expects content as array of content blocks
     formatted = [
         {"role": m["role"], "content": [{"text": m["content"]}]}
         for m in messages
     ]
 
+    system_text = SYSTEM_PROMPT + user_context
+
     response = bedrock.converse(
         modelId=MODEL_ID,
         messages=formatted,
-        system=[{"text": SYSTEM_PROMPT}],
+        system=[{"text": system_text}],
         inferenceConfig={
             "maxTokens": 1000,
             "temperature": 0.7,
@@ -218,6 +219,8 @@ def handler(event, context):
         body = json.loads(event.get("body", "{}"))
         user_message = body.get("message", "").strip()
         session_id = body.get("session_id", "")
+        user_name = body.get("user_name", "")
+        user_email = body.get("user_email", "")
 
         if not user_message:
             return _response(400, {"error": "message is required"})
@@ -225,6 +228,11 @@ def handler(event, context):
         # Create new session if none provided
         if not session_id:
             session_id = str(uuid.uuid4())
+
+        # Build user context for the system prompt
+        user_context = ""
+        if user_name or user_email:
+            user_context = f"\n\nLOGGED-IN USER: {user_name} ({user_email}). If the user says 'me', 'myself', 'I am', or similar self-references when answering a question, resolve it to this person's name and/or email. For example, if asked for the POC and they say 'me', use '{user_name}'. If asked for email and they say 'mine', use '{user_email}'."
 
         # Load conversation history
         messages = get_session_messages(session_id)
@@ -234,7 +242,7 @@ def handler(event, context):
         save_message(session_id, "user", user_message)
 
         # Call Bedrock
-        assistant_text = call_bedrock(messages)
+        assistant_text = call_bedrock(messages, user_context)
         print(f"Bedrock response: {assistant_text[:500]}")
 
         # Extract structured fields

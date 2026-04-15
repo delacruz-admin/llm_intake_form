@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { sendChatMessage, getUploadUrl, uploadFileToS3 } from '../api/client';
 
-export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate }) {
+export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate, user }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -32,7 +32,7 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
     setLoading(true);
 
     try {
-      const data = await sendChatMessage(sessionId, trimmed);
+      const data = await sendChatMessage(sessionId, trimmed, user);
 
       if (data.session_id && !sessionId) {
         onSessionId(data.session_id);
