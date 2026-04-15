@@ -57,6 +57,7 @@ function TriageModal({ request, onClose, onUpdated }) {
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState('');
   const [assignedTo, setAssignedTo] = useState(request.assigned_to || '');
+  const [promisedDate, setPromisedDate] = useState(request.promised_date || '');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
 
@@ -108,6 +109,20 @@ function TriageModal({ request, onClose, onUpdated }) {
     try {
       await updateRequest(request.request_id, { criticality: crit });
       showToast(`Criticality → ${crit}`);
+      onUpdated();
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePromisedDate() {
+    if (!promisedDate) return;
+    setSaving(true);
+    try {
+      await updateRequest(request.request_id, { promised_date: promisedDate });
+      showToast(`Promised date set to ${formatDate(promisedDate)}`);
       onUpdated();
     } catch (err) {
       showToast(`Error: ${err.message}`);
@@ -171,6 +186,10 @@ function TriageModal({ request, onClose, onUpdated }) {
             <div>
               <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Need Date</div>
               <div className="text-[0.82rem] text-text-dim">{formatDate(request.need_date)}</div>
+            </div>
+            <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Promised Date</div>
+              <div className="text-[0.82rem] text-text-dim">{formatDate(request.promised_date)}</div>
             </div>
           </div>
 
@@ -243,6 +262,29 @@ function TriageModal({ request, onClose, onUpdated }) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Promised Date */}
+            <div className="mb-4">
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-2">Promised Date</div>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={promisedDate}
+                  onChange={(e) => setPromisedDate(e.target.value)}
+                  className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-1.5 px-3 focus:outline-none focus:border-cooley-red"
+                />
+                <button
+                  onClick={handlePromisedDate}
+                  disabled={saving || !promisedDate}
+                  className="text-[0.74rem] font-semibold text-white bg-cooley-red rounded-cooley px-4 py-1.5 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+                >
+                  Set
+                </button>
+              </div>
+              {request.promised_date && (
+                <div className="text-[0.68rem] text-text-muted mt-1 font-mono">Current: {formatDate(request.promised_date)}</div>
+              )}
             </div>
           </div>
 
@@ -428,7 +470,7 @@ export default function Dashboard({ onNavigate }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'Assigned', 'Need Date', ''].map((h) => (
+                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'Assigned', 'Need Date', 'Promised', ''].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
@@ -447,6 +489,7 @@ export default function Dashboard({ onNavigate }) {
                     <td className="py-2.5 px-4"><StatusBadge status={r.status} /></td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.assigned_to || '—'}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.need_date)}</td>
+                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.promised_date)}</td>
                     <td className="py-2.5 px-4 text-right">
                       <button className="text-[0.68rem] font-medium text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-2 py-0.5 hover:bg-cooley-red-mid transition-colors">
                         Triage

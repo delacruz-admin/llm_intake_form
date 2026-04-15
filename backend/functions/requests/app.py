@@ -177,6 +177,8 @@ def update_request(request_id, event):
         allowed["criticality"] = body["criticality"]
     if "target_date" in body:
         allowed["target_date"] = body["target_date"]
+    if "promised_date" in body:
+        allowed["promised_date"] = body["promised_date"]
 
     if not allowed:
         return _response(400, {"error": "No valid fields to update"})
