@@ -118,14 +118,13 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, on
         </div>
         <button
           onClick={() => setOpen(!open)}
-          className={`shrink-0 mt-1 w-6 h-6 rounded-full flex items-center justify-center text-[0.65rem] transition-all ${
+          className={`shrink-0 mt-1 text-[0.58rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-cooley border transition-all ${
             annotations.length > 0
-              ? 'bg-amber-100 border border-amber-300 text-amber-700'
-              : 'bg-surface-tertiary border border-border text-text-muted opacity-0 group-hover:opacity-100'
+              ? 'bg-amber-100 border-amber-300 text-amber-700'
+              : 'bg-surface-tertiary border-border text-text-muted opacity-0 group-hover:opacity-100'
           }`}
-          title={annotations.length > 0 ? `${annotations.length} annotation(s)` : 'Add annotation'}
         >
-          {annotations.length > 0 ? annotations.length : '💬'}
+          Add Annotation
         </button>
       </div>
 
