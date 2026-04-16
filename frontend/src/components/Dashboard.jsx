@@ -259,7 +259,7 @@ export default function Dashboard({ onNavigate, user }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Assigned', 'Submitted', 'Need Date', 'Promised', ''].map((h) => (
+                  {['ID', 'Submitted', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Assigned', 'Need Date', 'Promised', ''].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
@@ -268,6 +268,7 @@ export default function Dashboard({ onNavigate, user }) {
                 {filtered.map((r) => (
                   <tr key={r.request_id} className="border-b border-border/60 hover:bg-cooley-red-light cursor-pointer transition-colors" onClick={() => onNavigate('triage', r.request_id)}>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.request_id}</td>
+                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.created_at)}</td>
                     <td className="py-2.5 px-4">
                       <div className="text-[0.8rem] text-text font-medium max-w-[200px] truncate">{r.title || '(Untitled)'}</div>
                       <div className="text-[0.68rem] text-text-dim">{r.poc_name}</div>
@@ -278,9 +279,8 @@ export default function Dashboard({ onNavigate, user }) {
                     <td className="py-2.5 px-4"><StatusBadge status={r.status} /></td>
                     <td className="py-2.5 px-4"><SlaCountdown createdAt={r.created_at} status={r.status} /></td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.assigned_to || '—'}</td>
-                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.created_at)}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.need_date)}</td>
-                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.promised_date)}</td>
+                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.promised_date ? formatDate(r.promised_date) : 'TBD'}</td>
                     <td className="py-2.5 px-4 text-right">
                       <button className="text-[0.68rem] font-medium text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-2 py-0.5 hover:bg-cooley-red-mid transition-colors">
                         Open
