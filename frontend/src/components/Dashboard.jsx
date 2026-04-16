@@ -41,6 +41,47 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function addBusinessDays(date, days) {
+  const result = new Date(date);
+  let added = 0;
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const dow = result.getDay();
+    if (dow !== 0 && dow !== 6) added++;
+  }
+  return result;
+}
+
+function SlaCountdown({ createdAt, status }) {
+  if (!createdAt || status === 'deferred' || status === 'draft') return null;
+
+  const slaDeadline = addBusinessDays(new Date(createdAt), 5);
+  const now = new Date();
+  const diffMs = slaDeadline - now;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (status === 'under-review' || status === 'accepted-discovery' || status === 'active' || status === 'in-backlog') {
+    // Already reviewed — show "Reviewed" or time it took
+    return <span className="font-mono text-[0.6rem] text-semantic-green">Reviewed</span>;
+  }
+
+  // Only show countdown for received-pending
+  if (status !== 'received-pending') return null;
+
+  if (diffMs <= 0) {
+    return <span className="font-mono text-[0.6rem] font-semibold text-red-600">SLA Overdue</span>;
+  }
+
+  let color = 'text-semantic-green';
+  if (diffHours < 24) color = 'text-red-600 font-semibold';
+  else if (diffHours < 48) color = 'text-amber-600';
+
+  const label = diffDays > 0 ? `${diffDays}d ${diffHours % 24}h` : `${diffHours}h`;
+
+  return <span className={`font-mono text-[0.6rem] ${color}`}>SLA: {label}</span>;
+}
+
 export default function Dashboard({ onNavigate, user }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -218,7 +259,7 @@ export default function Dashboard({ onNavigate, user }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'Assigned', 'Submitted', 'Need Date', 'Promised', ''].map((h) => (
+                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Assigned', 'Submitted', 'Need Date', 'Promised', ''].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
@@ -235,6 +276,7 @@ export default function Dashboard({ onNavigate, user }) {
                     <td className="py-2.5 px-4 text-[0.72rem] text-text-dim">{r.request_type || '—'}</td>
                     <td className="py-2.5 px-4">{r.criticality ? <CritBadge value={r.criticality} /> : '—'}</td>
                     <td className="py-2.5 px-4"><StatusBadge status={r.status} /></td>
+                    <td className="py-2.5 px-4"><SlaCountdown createdAt={r.created_at} status={r.status} /></td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.assigned_to || '—'}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.created_at)}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.need_date)}</td>

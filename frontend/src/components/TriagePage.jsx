@@ -47,6 +47,33 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function addBusinessDays(date, days) {
+  const result = new Date(date);
+  let added = 0;
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const dow = result.getDay();
+    if (dow !== 0 && dow !== 6) added++;
+  }
+  return result;
+}
+
+function getSlaText(createdAt, status) {
+  if (!createdAt || status === 'deferred' || status === 'draft') return null;
+
+  const slaDeadline = addBusinessDays(new Date(createdAt), 5);
+  const now = new Date();
+  const diffMs = slaDeadline - now;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (status !== 'received-pending') return 'Reviewed';
+
+  if (diffMs <= 0) return 'OVERDUE';
+
+  return diffDays > 0 ? `${diffDays}d ${diffHours % 24}h remaining` : `${diffHours}h remaining`;
+}
+
 function Field({ label, value }) {
   if (!value || value === '—') return null;
   return (
@@ -669,6 +696,7 @@ export default function TriagePage({ requestId, onNavigate, user }) {
             ['Need Date', formatDate(r.need_date)],
             ['Promised Date', formatDate(r.promised_date)],
             ['Assigned Technical Manager', r.assigned_to || 'Unassigned'],
+            ['Review SLA (5 business days)', getSlaText(r.created_at, r.status)],
             ['AI Summary', summary || <span className="text-text-muted italic text-[0.75rem]">Generating summary…</span>],
           ]} />
 
