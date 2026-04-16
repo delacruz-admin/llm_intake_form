@@ -100,7 +100,7 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
           ARB
         </div>
         <div>
-          <div className="text-[0.84rem] font-semibold text-text leading-tight">ARB Intake Assistant</div>
+          <div className="text-[0.84rem] font-semibold text-text leading-tight">Architecture Review Board Intake Assistant</div>
           <div className="text-[0.67rem] text-text-muted font-mono">Enterprise Architecture &amp; Infrastructure</div>
         </div>
         <div className="ml-auto flex items-center gap-1.5 text-[0.67rem] font-mono text-text-muted">

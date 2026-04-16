@@ -8,7 +8,7 @@ export default function Navbar({ user, onLogout, page, onNavigate }) {
         <div className="w-px h-5 bg-border" />
         <div>
           <div className="text-[0.8rem] font-semibold text-text leading-tight">
-            {page === 'dashboard' ? 'ARB Intake Dashboard' : 'ARB Intake Assistant'}
+            {page === 'dashboard' ? 'Architecture Review Board Intake Dashboard' : 'Architecture Review Board Intake Assistant'}
           </div>
           <div className="text-[0.67rem] text-text-muted">Technology Infrastructure · Enterprise Architecture</div>
         </div>
