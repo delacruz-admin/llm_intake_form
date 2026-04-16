@@ -120,7 +120,14 @@ function CriticalityPill({ value }) {
 }
 
 function CollapsibleSection({ section, fields, complete, active, isOptional, hasData, filledCount }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [manualToggle, setManualToggle] = useState(null);
+
+  // Auto-expand the active section, collapse others. Manual toggle overrides.
+  const isExpanded = manualToggle !== null ? manualToggle : active || (filledCount > 0 && !complete && section.id.startsWith('A'));
+
+  function handleToggle() {
+    setManualToggle(isExpanded ? false : true);
+  }
 
   return (
     <div
@@ -129,10 +136,10 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
       }`}
     >
       <button
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={handleToggle}
         className="w-full flex items-center gap-2 px-3 py-2 bg-surface-secondary border-b border-border hover:bg-surface-tertiary transition-colors text-left"
       >
-        <span className={`text-[0.5rem] text-text-muted transition-transform ${collapsed ? '-rotate-90' : ''}`}>▼</span>
+        <span className={`text-[0.5rem] text-text-muted transition-transform ${!isExpanded ? '-rotate-90' : ''}`}>▼</span>
         <span className="text-[0.76rem]">{section.icon}</span>
         <span className="text-[0.63rem] font-semibold uppercase tracking-wider text-text-dim flex-1 font-mono">
           {section.label}
@@ -147,7 +154,7 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
           <span className="text-[0.63rem] font-semibold text-semantic-green">✓</span>
         )}
       </button>
-      {!collapsed && (
+      {isExpanded && (
         <div className="px-3 py-2.5 flex flex-col gap-1.5">
           {section.fields.map((f) => (
             <div key={f.key}>
