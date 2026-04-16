@@ -64,8 +64,13 @@ export default function Dashboard({ onNavigate, user }) {
 
   const isReviewer = user?.isReviewer;
 
-  const filtered = requests.filter((r) => {
-    // Submitters only see their own entries
+  // Separate drafts (only user's own) from submitted entries
+  const myDrafts = requests.filter((r) => r.status === 'draft' && r.submitter_email === user?.email);
+
+  // Main register excludes drafts; submitters only see their own entries
+  const nonDrafts = requests.filter((r) => r.status !== 'draft');
+
+  const filtered = nonDrafts.filter((r) => {
     if (!isReviewer && r.submitter_email && user?.email && r.submitter_email !== user.email) return false;
     if (statusFilter && r.status !== statusFilter) return false;
     if (search) {
@@ -76,12 +81,12 @@ export default function Dashboard({ onNavigate, user }) {
   });
 
   const statCounts = {
-    all: requests.length,
-    'received-pending': requests.filter((r) => r.status === 'received-pending').length,
-    'under-review': requests.filter((r) => r.status === 'under-review').length,
-    'accepted-discovery': requests.filter((r) => r.status === 'accepted-discovery').length,
-    'in-backlog': requests.filter((r) => r.status === 'in-backlog').length,
-    'active': requests.filter((r) => r.status === 'active').length,
+    all: nonDrafts.length,
+    'received-pending': nonDrafts.filter((r) => r.status === 'received-pending').length,
+    'under-review': nonDrafts.filter((r) => r.status === 'under-review').length,
+    'accepted-discovery': nonDrafts.filter((r) => r.status === 'accepted-discovery').length,
+    'in-backlog': nonDrafts.filter((r) => r.status === 'in-backlog').length,
+    'active': nonDrafts.filter((r) => r.status === 'active').length,
   };
 
   return (
@@ -118,6 +123,38 @@ export default function Dashboard({ onNavigate, user }) {
         </div>
       </div>
 
+      {/* My Drafts */}
+      {myDrafts.length > 0 && (
+        <div className="max-w-[1380px] mx-auto px-8 pt-7 pb-2">
+          <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-purple-600 mb-1">My Drafts</div>
+          <div className="font-serif text-lg text-text mb-3">Incomplete Submissions</div>
+          <div className="grid grid-cols-1 gap-2">
+            {myDrafts.map((d) => (
+              <div
+                key={d.request_id}
+                onClick={() => onNavigate('triage', d.request_id)}
+                className="bg-white border border-border border-l-[3px] border-l-purple-400 rounded-cooley p-4 flex items-center gap-4 cursor-pointer hover:-translate-y-px hover:shadow transition-all"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-[0.65rem] text-text-muted">{d.request_id}</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-[0.6rem] px-2 py-0.5 rounded-sm border bg-purple-50 border-purple-200 text-purple-700">
+                      <span className="w-[5px] h-[5px] rounded-full bg-purple-400" />
+                      Draft
+                    </span>
+                  </div>
+                  <div className="text-[0.85rem] text-text font-medium truncate">{d.title || '(Untitled)'}</div>
+                  <div className="text-[0.72rem] text-text-dim mt-0.5">{d.team || 'No team specified'} · Saved {formatDate(d.updated_at || d.created_at)}</div>
+                </div>
+                <button className="text-[0.68rem] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-cooley px-3 py-1.5 hover:bg-purple-600 hover:text-white transition-colors shrink-0">
+                  Continue
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Table Section */}
       <div className="max-w-[1380px] mx-auto px-8 py-7">
         <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-1">All Requests</div>
@@ -141,7 +178,6 @@ export default function Dashboard({ onNavigate, user }) {
             className="bg-white border border-border rounded-cooley text-text-dim text-[0.76rem] py-1 px-2.5 focus:outline-none focus:border-cooley-red"
           >
             <option value="">All</option>
-            <option value="draft">Draft</option>
             <option value="received-pending">Received, Pending Review</option>
             <option value="under-review">Under Review</option>
             <option value="accepted-discovery">Accepted - In Discovery</option>
@@ -152,7 +188,7 @@ export default function Dashboard({ onNavigate, user }) {
           <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="text-[0.72rem] text-text-muted border border-border rounded-cooley px-2.5 py-1 hover:text-cooley-red hover:border-cooley-red-mid transition-colors">
             Reset
           </button>
-          <span className="ml-auto font-mono text-[0.63rem] text-text-muted">{filtered.length} of {requests.length} requests</span>
+          <span className="ml-auto font-mono text-[0.63rem] text-text-muted">{filtered.length} of {nonDrafts.length} requests</span>
         </div>
 
         <div className="bg-white border border-border rounded-cooley overflow-hidden mt-4">
