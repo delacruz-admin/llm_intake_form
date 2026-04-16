@@ -133,7 +133,7 @@ function AttachmentSection({ section, sessionId, complete, active, isOptional })
   const [uploading, setUploading] = useState('');
   const fileInputRefs = useRef({});
 
-  const isExpanded = manualToggle !== null ? manualToggle : true;
+  const isExpanded = manualToggle !== null ? manualToggle : false;
 
   function handleToggle() {
     setManualToggle(isExpanded ? false : true);
