@@ -7,39 +7,39 @@ const SECTIONS = [
     fields: [
       { key: 'submitter', label: 'Submitter' },
       { key: 'submitter_email', label: 'Submitter Email' },
-      { key: 'team', label: 'Initiative Team / Department' },
-      { key: 'poc_name', label: 'Initiative POC' },
-      { key: 'poc_email', label: 'Initiative POC Email' },
-      { key: 'exec_sponsor', label: 'Initiative Executive Sponsor' },
+      { key: 'team', label: 'Initiative Team / Department', hint: 'e.g., Data Science & Engineering' },
+      { key: 'poc_name', label: 'Initiative POC', hint: 'Full name of the primary point of contact' },
+      { key: 'poc_email', label: 'Initiative POC Email', hint: 'name@cooley.com' },
+      { key: 'exec_sponsor', label: 'Initiative Executive Sponsor', hint: 'Full name of the executive sponsor' },
     ],
   },
   {
     id: 'A2', icon: '📋', label: 'A2 · Request Details',
     fields: [
-      { key: 'request_type', label: 'Request Type' },
-      { key: 'app_type', label: 'Application Type' },
-      { key: 'title', label: 'Title' },
-      { key: 'description', label: 'Description' },
-      { key: 'deliverables', label: 'Deliverables' },
+      { key: 'request_type', label: 'Request Type', hint: 'New Service, Enhancement, Advisory, or Compliance' },
+      { key: 'app_type', label: 'Application Type', hint: 'Full Stack, Web, API, Microservice, ETL, ML Workload, Batch, Other' },
+      { key: 'title', label: 'Title', hint: 'Short, clear summary of the request' },
+      { key: 'description', label: 'Description', hint: 'Full context including key components and services' },
+      { key: 'deliverables', label: 'Deliverables', hint: 'List of expected deliverables' },
     ],
   },
   {
     id: 'A3', icon: '💼', label: 'A3 · Business Context & Impact',
     fields: [
-      { key: 'business_outcomes', label: 'Business Outcomes' },
-      { key: 'criticality', label: 'Business Criticality' },
-      { key: 'impact_if_not_done', label: 'Impact if Not Implemented' },
-      { key: 'impact_scale', label: 'Scale of Impact' },
-      { key: 'need_date', label: 'Anticipated Need Date' },
+      { key: 'business_outcomes', label: 'Business Outcomes', hint: 'What problem are you solving, and for whom?' },
+      { key: 'criticality', label: 'Business Criticality', hint: 'Emergency, High, Medium, or Low' },
+      { key: 'impact_if_not_done', label: 'Impact if Not Implemented', hint: 'What happens if this request is not fulfilled?' },
+      { key: 'impact_scale', label: 'Scale of Impact', hint: 'Single-Team, Multi-Team, or Firm-Wide' },
+      { key: 'need_date', label: 'Anticipated Need Date', hint: 'YYYY-MM-DD' },
     ],
   },
   {
     id: 'A4', icon: '🔗', label: 'A4 · Dependencies',
     fields: [
-      { key: 'vendor_involved', label: 'Vendor Involved' },
-      { key: 'vendor_name', label: 'Vendor Name' },
-      { key: 'system_dependencies', label: 'System Dependencies' },
-      { key: 'discovery_stakeholders', label: 'Discovery Stakeholders' },
+      { key: 'vendor_involved', label: 'Vendor Involved', hint: 'Yes or No' },
+      { key: 'vendor_name', label: 'Vendor Name', hint: 'Name of third-party vendor, if any' },
+      { key: 'system_dependencies', label: 'System Dependencies', hint: 'Upstream or downstream system dependencies' },
+      { key: 'discovery_stakeholders', label: 'Discovery Stakeholders', hint: 'Names (and vendor emails if applicable)' },
     ],
   },
   {
@@ -55,48 +55,48 @@ const SECTIONS = [
   {
     id: 'C1', icon: '🌐', label: 'C1 · Environments',
     fields: [
-      { key: 'environments_needed', label: 'Environments' },
-      { key: 'hosting_preference', label: 'Hosting Preference' },
-      { key: 'new_aws_account', label: 'New AWS Account' },
-      { key: 'aws_account_name', label: 'AWS Account Name' },
-      { key: 'aws_region', label: 'AWS Region' },
+      { key: 'environments_needed', label: 'Environments', hint: 'RPE, DEV, UAT, PRD' },
+      { key: 'hosting_preference', label: 'Hosting Preference', hint: 'Colo, AWS, Azure, or Other' },
+      { key: 'new_aws_account', label: 'New AWS Account', hint: 'Yes or No' },
+      { key: 'aws_account_name', label: 'AWS Account Name', hint: 'e.g., cooley-dse-nonprod' },
+      { key: 'aws_region', label: 'AWS Region', hint: 'e.g., us-east-1' },
     ],
   },
   {
     id: 'C2', icon: '🔑', label: 'C2 · IAM',
     fields: [
-      { key: 'sso_needed', label: 'SSO Integration' },
-      { key: 'access_patterns', label: 'Access Patterns' },
+      { key: 'sso_needed', label: 'SSO Integration', hint: 'Yes or No' },
+      { key: 'access_patterns', label: 'Access Patterns', hint: 'Which teams need what type of access?' },
     ],
   },
   {
     id: 'C3', icon: '🏗️', label: 'C3 · Architecture',
     fields: [
-      { key: 'deployment_model', label: 'Deployment Model' },
-      { key: 'compute_needed', label: 'Compute Requirements' },
-      { key: 'database_needed', label: 'Database Requirements' },
-      { key: 'storage_needed', label: 'Storage Requirements' },
+      { key: 'deployment_model', label: 'Deployment Model', hint: 'Serverless, Containers, VMs, AI/ML, Managed services, etc.' },
+      { key: 'compute_needed', label: 'Compute Requirements', hint: 'EC2, ECS, Lambda, SageMaker, etc.' },
+      { key: 'database_needed', label: 'Database Requirements', hint: 'Aurora, RDS, DynamoDB, Redshift, etc.' },
+      { key: 'storage_needed', label: 'Storage Requirements', hint: 'EBS, EFS, S3, etc.' },
     ],
   },
   {
     id: 'C4', icon: '🔌', label: 'C4 · Network',
     fields: [
-      { key: 'connectivity_type', label: 'Connectivity' },
-      { key: 'vpc_requirements', label: 'VPC Requirements' },
+      { key: 'connectivity_type', label: 'Connectivity', hint: 'Public Internet, Private Link/VPN, Isolated, On-Prem' },
+      { key: 'vpc_requirements', label: 'VPC Requirements', hint: 'Shared, Existing, or New' },
     ],
   },
   {
     id: 'C5', icon: '🛡️', label: 'C5 · Security',
     fields: [
-      { key: 'compliance_frameworks', label: 'Compliance Frameworks' },
-      { key: 'data_classification', label: 'Data Classification' },
-      { key: 'encryption_requirements', label: 'Encryption' },
+      { key: 'compliance_frameworks', label: 'Compliance Frameworks', hint: 'PCI, SOC2, GDPR, FedRAMP, or None' },
+      { key: 'data_classification', label: 'Data Classification', hint: 'Public, Internal, Confidential, or Restricted' },
+      { key: 'encryption_requirements', label: 'Encryption', hint: 'At rest, in transit, key management approach' },
     ],
   },
   {
     id: 'C6', icon: '💬', label: 'C6 · Comments',
     fields: [
-      { key: 'additional_comments', label: 'Additional Comments' },
+      { key: 'additional_comments', label: 'Additional Comments', hint: 'Anything that doesn\'t fit the sections above' },
     ],
   },
 ];
@@ -234,7 +234,7 @@ function AttachmentSection({ section, sessionId, complete, active, isOptional })
   );
 }
 
-function EditableField({ fieldKey, label, value, onSave }) {
+function EditableField({ fieldKey, label, value, onSave, hint }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -284,7 +284,8 @@ function EditableField({ fieldKey, label, value, onSave }) {
             onBlur={save}
             onKeyDown={handleKeyDown}
             rows={3}
-            className="w-full bg-white border border-cooley-red rounded-cooley text-[0.78rem] py-1 px-2 resize-none focus:outline-none"
+            placeholder={hint || ''}
+            className="w-full bg-white border border-cooley-red rounded-cooley text-[0.78rem] py-1 px-2 resize-none focus:outline-none placeholder:text-text-muted/50"
             autoFocus
           />
         ) : (
@@ -294,7 +295,8 @@ function EditableField({ fieldKey, label, value, onSave }) {
             onChange={(e) => setDraft(e.target.value)}
             onBlur={save}
             onKeyDown={handleKeyDown}
-            className="w-full bg-white border border-cooley-red rounded-cooley text-[0.78rem] py-1 px-2 focus:outline-none"
+            placeholder={hint || ''}
+            className="w-full bg-white border border-cooley-red rounded-cooley text-[0.78rem] py-1 px-2 focus:outline-none placeholder:text-text-muted/50"
             autoFocus
           />
         )}
@@ -312,11 +314,11 @@ function EditableField({ fieldKey, label, value, onSave }) {
       </div>
       <div className={`text-[0.78rem] min-h-[16px] rounded px-0.5 -mx-0.5 transition-colors ${
         readOnly ? '' : 'group-hover/field:bg-cooley-red-light'
-      } ${value ? 'text-text' : 'text-text-muted italic'}`}>
+      } ${value ? 'text-text' : 'text-text-muted/40 italic'}`}>
         {fieldKey === 'criticality' && value ? (
           <CriticalityPill value={value} />
         ) : (
-          value || '—'
+          value || hint || '—'
         )}
       </div>
     </div>
@@ -366,6 +368,7 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
               fieldKey={f.key}
               label={f.label}
               value={fields[f.key] || ''}
+              hint={f.hint}
               onSave={onFieldUpdate}
             />
           ))}
