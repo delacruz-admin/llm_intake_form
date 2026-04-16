@@ -36,6 +36,10 @@ def handler(event, context):
             return add_note(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/notes"):
             return get_notes(path_params["id"])
+        elif method == "POST" and "id" in path_params and resource.endswith("/annotations"):
+            return add_annotation(path_params["id"], event)
+        elif method == "GET" and "id" in path_params and resource.endswith("/annotations"):
+            return get_annotations(path_params["id"])
         elif method == "GET" and "id" in path_params:
             return get_request(path_params["id"])
         elif method == "GET":
@@ -268,6 +272,57 @@ def get_notes(request_id):
         notes.append(item)
 
     return _response(200, {"notes": notes, "count": len(notes)})
+
+
+def add_annotation(request_id, event):
+    """Add a field-level annotation to a request."""
+    body = json.loads(event.get("body", "{}"))
+    field_name = body.get("field_name", "").strip()
+    text = body.get("text", "").strip()
+    author = body.get("author", "Unknown")
+
+    if not field_name or not text:
+        return _response(400, {"error": "field_name and text are required"})
+
+    now = datetime.utcnow().isoformat()
+    annotation_id = uuid.uuid4().hex[:8]
+
+    requests_table.put_item(
+        Item={
+            "PK": f"REQUEST#{request_id}",
+            "SK": f"ANNOT#{field_name}#{now}#{annotation_id}",
+            "annotation_id": annotation_id,
+            "field_name": field_name,
+            "text": text,
+            "author": author,
+            "created_at": now,
+        }
+    )
+
+    return _response(201, {
+        "annotation_id": annotation_id,
+        "message": "Annotation added.",
+    })
+
+
+def get_annotations(request_id):
+    """Get all field-level annotations for a request."""
+    response = requests_table.query(
+        KeyConditionExpression="PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues={
+            ":pk": f"REQUEST#{request_id}",
+            ":sk": "ANNOT#",
+        },
+        ScanIndexForward=True,
+    )
+
+    annotations = []
+    for item in response.get("Items", []):
+        item.pop("PK", None)
+        item.pop("SK", None)
+        annotations.append(item)
+
+    return _response(200, {"annotations": annotations})
 
 
 def delete_request(request_id):

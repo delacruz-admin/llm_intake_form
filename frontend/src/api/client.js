@@ -116,3 +116,16 @@ export function listAttachments(requestId) {
 export function deleteRequest(requestId) {
   return request(`/requests/${requestId}`, { method: 'DELETE' });
 }
+
+/** Add a field-level annotation. */
+export function addAnnotation(requestId, fieldName, text, author) {
+  return request(`/requests/${requestId}/annotations`, {
+    method: 'POST',
+    body: JSON.stringify({ field_name: fieldName, text, author }),
+  });
+}
+
+/** Get all annotations for a request. */
+export function getAnnotations(requestId) {
+  return request(`/requests/${requestId}/annotations`);
+}
