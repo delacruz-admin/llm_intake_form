@@ -101,6 +101,8 @@ const SECTIONS = [
   },
 ];
 
+const ALL_FIELD_KEYS = SECTIONS.filter((s) => !s.isUploadSection).flatMap((s) => s.fields.map((f) => f.key));
+
 const REQUIRED_KEYS = [
   'team', 'poc_name', 'poc_email', 'exec_sponsor',
   'request_type', 'app_type', 'title', 'description',
@@ -385,8 +387,9 @@ export default function PreviewPanel({ fields, sessionId, onFieldUpdate, draftId
   const [toast, setToast] = useState('');
 
   const filledRequired = REQUIRED_KEYS.filter((k) => fields[k]).length;
-  const pct = Math.round((filledRequired / REQUIRED_KEYS.length) * 100);
-  const ready = pct >= 85;
+  const filledTotal = ALL_FIELD_KEYS.filter((k) => fields[k]).length;
+  const pct = Math.round((filledTotal / ALL_FIELD_KEYS.length) * 100);
+  const ready = filledRequired >= Math.ceil(REQUIRED_KEYS.length * 0.85);
 
   function isSectionComplete(section) {
     // Attachment and optional sections don't block completion
@@ -462,7 +465,7 @@ export default function PreviewPanel({ fields, sessionId, onFieldUpdate, draftId
           </div>
           <div className="font-mono text-[0.63rem] text-cooley-red min-w-[26px] text-right">{pct}%</div>
         </div>
-        <div className="text-[0.6rem] text-text-muted mt-1">Part A required fields: {filledRequired}/{REQUIRED_KEYS.length}</div>
+        <div className="text-[0.6rem] text-text-muted mt-1">{filledTotal}/{ALL_FIELD_KEYS.length} fields · {filledRequired}/{REQUIRED_KEYS.length} required</div>
       </div>
 
       {/* Sections */}
