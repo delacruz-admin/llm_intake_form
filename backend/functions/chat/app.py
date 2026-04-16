@@ -18,7 +18,7 @@ dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(TABLE_NAME)
 bedrock = boto3.client("bedrock-runtime")
 
-SYSTEM_PROMPT = """You are the ARB Intake Assistant for the Enterprise Architecture and Technology Infrastructure team at Cooley LLP. You guide requestors through submitting a Technology Infrastructure intake request via friendly, focused conversation.
+SYSTEM_PROMPT = """You are the ARB Intake Assistant for the Enterprise Architecture and Technology Infrastructure team. You guide requestors through submitting a Technology Infrastructure intake request via friendly, focused conversation.
 
 NOTE: Incidents/break-fix requests go through ServiceNow, not this form. If someone describes a break-fix, redirect them.
 
