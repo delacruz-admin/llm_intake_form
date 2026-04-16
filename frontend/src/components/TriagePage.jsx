@@ -133,7 +133,7 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, on
       {annotations.length > 0 && (
         <div className="ml-0 mt-1.5 flex flex-col gap-1">
           {annotations.map((a) => (
-            <div key={a.annotation_id} className="bg-amber-50 border border-amber-200 rounded-cooley px-3 py-1.5 text-[0.75rem]">
+            <div key={a.annotation_id} className="bg-amber-50 border border-amber-200 rounded-cooley px-3 py-1.5 text-[0.75rem] group/annot">
               {editingId === a.annotation_id ? (
                 <div className="flex gap-2">
                   <input
@@ -155,7 +155,7 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, on
                       <span className="font-mono text-[0.6rem] text-amber-500 ml-2">{formatDate(a.created_at)}</span>
                       {a.edited_at && <span className="font-mono text-[0.55rem] text-amber-400 ml-1">(edited)</span>}
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1 opacity-0 group-hover/annot:opacity-100 transition-opacity">
                       <button onClick={() => startEdit(a)} className="text-[0.6rem] text-amber-600 hover:text-amber-800 px-1" title="Edit">✎</button>
                       <button onClick={() => handleDeleteAnnotation(a)} className="text-[0.6rem] text-red-400 hover:text-red-600 px-1" title="Delete">✕</button>
                     </div>
