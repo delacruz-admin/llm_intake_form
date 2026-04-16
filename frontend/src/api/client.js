@@ -89,6 +89,22 @@ export function getNotes(requestId) {
   return request(`/requests/${requestId}/notes`);
 }
 
+/** Update a triage note. */
+export function updateNote(requestId, sk, text) {
+  return request(`/requests/${requestId}/notes`, {
+    method: 'PUT',
+    body: JSON.stringify({ sk, text }),
+  });
+}
+
+/** Delete a triage note. */
+export function deleteNote(requestId, sk) {
+  return request(`/requests/${requestId}/notes`, {
+    method: 'DELETE',
+    body: JSON.stringify({ sk }),
+  });
+}
+
 /** Get a presigned upload URL for a file attachment. */
 export function getUploadUrl(requestId, filename, contentType, category = 'general') {
   return request(`/requests/${requestId}/attachments`, {

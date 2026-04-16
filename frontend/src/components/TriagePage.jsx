@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getRequest, updateRequest, addNote, getNotes, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation } from '../api/client';
+import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
@@ -198,6 +198,52 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, on
   );
 }
 
+function NoteCard({ note, onEdit, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(note.text);
+
+  function handleSave() {
+    if (!editText.trim()) return;
+    onEdit(note.sk, editText.trim());
+    setEditing(false);
+  }
+
+  return (
+    <div className="bg-surface-secondary border border-border rounded-cooley p-3 group/note">
+      {editing ? (
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            rows={2}
+            className="bg-white border border-border rounded-cooley text-[0.8rem] py-1.5 px-2.5 resize-none focus:outline-none focus:border-cooley-red"
+            autoFocus
+          />
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setEditing(false)} className="text-[0.65rem] text-text-muted hover:text-text px-2 py-1">Cancel</button>
+            <button onClick={handleSave} className="text-[0.65rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-1 hover:bg-cooley-red-hover">Save</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <span className="font-mono text-[0.65rem] font-semibold text-text-dim">{note.author}</span>
+              <span className="font-mono text-[0.6rem] text-text-muted ml-2">{formatDate(note.created_at)}</span>
+              {note.edited_at && <span className="font-mono text-[0.55rem] text-text-muted ml-1">(edited)</span>}
+            </div>
+            <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity">
+              <button onClick={() => setEditing(true)} className="text-[0.6rem] text-text-muted hover:text-cooley-red px-1" title="Edit">✎</button>
+              <button onClick={() => onDelete(note.sk)} className="text-[0.6rem] text-text-muted hover:text-red-600 px-1" title="Delete">✕</button>
+            </div>
+          </div>
+          <div className="text-[0.8rem] text-text-dim leading-relaxed">{note.text}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function TriagePage({ requestId, onNavigate }) {
   const user = getUser();
   const [request, setRequest] = useState(null);
@@ -295,6 +341,25 @@ export default function TriagePage({ requestId, onNavigate }) {
       showToast('Note added');
     } catch (err) { showToast(`Error: ${err.message}`); }
     finally { setSaving(false); }
+  }
+
+  async function handleEditNote(sk, text) {
+    try {
+      await updateNote(requestId, sk, text);
+      const data = await getNotes(requestId);
+      setNotes(data.notes || []);
+      showToast('Note updated');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  }
+
+  async function handleDeleteNote(sk) {
+    if (!window.confirm('Delete this note?')) return;
+    try {
+      await deleteNote(requestId, sk);
+      const data = await getNotes(requestId);
+      setNotes(data.notes || []);
+      showToast('Note deleted');
+    } catch (err) { showToast(`Error: ${err.message}`); }
   }
 
   async function handleAddAnnotation(fieldName, text) {
@@ -594,13 +659,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ) : (
               <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
                 {notes.map((n) => (
-                  <div key={n.note_id} className="bg-surface-secondary border border-border rounded-cooley p-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-[0.65rem] font-semibold text-text-dim">{n.author}</span>
-                      <span className="font-mono text-[0.6rem] text-text-muted">{formatDate(n.created_at)}</span>
-                    </div>
-                    <div className="text-[0.8rem] text-text-dim leading-relaxed">{n.text}</div>
-                  </div>
+                  <NoteCard key={n.note_id} note={n} onEdit={handleEditNote} onDelete={handleDeleteNote} />
                 ))}
               </div>
             )}

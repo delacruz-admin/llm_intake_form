@@ -374,11 +374,47 @@ resource "aws_api_gateway_integration_response" "notes_options" {
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
 
   depends_on = [aws_api_gateway_integration.notes_options]
+}
+
+# ── PUT and DELETE for /requests/{id}/notes ────────────────
+
+resource "aws_api_gateway_method" "notes_put" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id_notes.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "notes_put" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.requests_id_notes.id
+  http_method             = aws_api_gateway_method.notes_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
+}
+
+resource "aws_api_gateway_method" "notes_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id_notes.id
+  http_method   = "DELETE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "notes_delete" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.requests_id_notes.id
+  http_method             = aws_api_gateway_method.notes_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
 }
 
 # ── /requests/{id}/attachments resource ────────────────────
@@ -598,6 +634,8 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_method.requests_id_delete.id,
       aws_api_gateway_method.notes_post.id,
       aws_api_gateway_method.notes_get.id,
+      aws_api_gateway_method.notes_put.id,
+      aws_api_gateway_method.notes_delete.id,
       aws_api_gateway_integration.chat_post.id,
       aws_api_gateway_integration.requests_post.id,
       aws_api_gateway_integration.requests_get.id,
@@ -606,6 +644,8 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_integration.requests_id_delete.id,
       aws_api_gateway_integration.notes_post.id,
       aws_api_gateway_integration.notes_get.id,
+      aws_api_gateway_integration.notes_put.id,
+      aws_api_gateway_integration.notes_delete.id,
       aws_api_gateway_method.attachments_post.id,
       aws_api_gateway_method.attachments_get.id,
       aws_api_gateway_integration.attachments_post.id,
