@@ -27,6 +27,9 @@ const STATUS_TRANSITIONS = {
   'deferred': ['under-review'],
 };
 
+// Fallback for legacy/unknown statuses
+const DEFAULT_TRANSITIONS = ['received-pending', 'under-review'];
+
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG['received-pending'];
   return (
@@ -144,7 +147,7 @@ function TriageModal({ request, onClose, onUpdated }) {
     }
   }
 
-  const nextStatuses = STATUS_TRANSITIONS[request.status] || [];
+  const nextStatuses = STATUS_TRANSITIONS[request.status] || DEFAULT_TRANSITIONS;
 
   return (
     <div className="fixed inset-0 bg-black/35 backdrop-blur-sm z-[200] flex items-center justify-center p-8" onClick={onClose}>
