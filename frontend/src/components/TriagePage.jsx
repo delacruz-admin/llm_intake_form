@@ -8,6 +8,7 @@ const STATUS_CONFIG = {
   'in-backlog': { label: 'In Backlog', dot: 'bg-blue-400', bg: 'bg-blue-50 border-blue-200 text-blue-800' },
   'active': { label: 'Active', dot: 'bg-blue-500', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
   'deferred': { label: 'Deferred', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-muted' },
+  'completed': { label: 'Completed', dot: 'bg-green-500', bg: 'bg-green-50 border-green-300 text-green-800' },
 };
 
 const CRIT_CONFIG = {

@@ -9,6 +9,7 @@ const STATUS_CONFIG = {
   'in-backlog': { label: 'In Backlog', dot: 'bg-blue-400', bg: 'bg-blue-50 border-blue-200 text-blue-800' },
   'active': { label: 'Active', dot: 'bg-blue-500', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
   'deferred': { label: 'Deferred', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-muted' },
+  'completed': { label: 'Completed', dot: 'bg-green-500', bg: 'bg-green-50 border-green-300 text-green-800' },
 };
 
 const CRIT_CONFIG = {
@@ -61,7 +62,7 @@ function SlaCountdown({ createdAt, status }) {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffHours / 24);
 
-  if (status === 'under-review' || status === 'accepted-discovery' || status === 'active' || status === 'in-backlog') {
+  if (status === 'under-review' || status === 'accepted-discovery' || status === 'active' || status === 'in-backlog' || status === 'completed') {
     // Already reviewed — show "Reviewed" or time it took
     return <span className="font-mono text-[0.6rem] text-semantic-green">Reviewed</span>;
   }
@@ -260,6 +261,7 @@ export default function Dashboard({ onNavigate, user }) {
             <option value="in-backlog">In Backlog</option>
             <option value="active">Active</option>
             <option value="deferred">Deferred</option>
+            <option value="completed">Completed</option>
           </select>
           <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="text-[0.72rem] text-text-muted border border-border rounded-cooley px-2.5 py-1 hover:text-cooley-red hover:border-cooley-red-mid transition-colors">
             Reset
