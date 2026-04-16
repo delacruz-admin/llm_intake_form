@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listRequests } from '../api/client';
+import { listRequests, deleteRequest } from '../api/client';
 
 const STATUS_CONFIG = {
   'draft': { label: 'Draft', dot: 'bg-purple-400', bg: 'bg-purple-50 border-purple-200 text-purple-700' },
@@ -146,8 +146,22 @@ export default function Dashboard({ onNavigate, user }) {
                   <div className="text-[0.85rem] text-text font-medium truncate">{d.title || '(Untitled)'}</div>
                   <div className="text-[0.72rem] text-text-dim mt-0.5">{d.team || 'No team specified'} · Saved {formatDate(d.updated_at || d.created_at)}</div>
                 </div>
-                <button className="text-[0.68rem] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-cooley px-3 py-1.5 hover:bg-purple-600 hover:text-white transition-colors shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onNavigate('triage', d.request_id); }}
+                  className="text-[0.68rem] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-cooley px-3 py-1.5 hover:bg-purple-600 hover:text-white transition-colors shrink-0"
+                >
                   Continue
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Delete draft ${d.request_id}?`)) {
+                      deleteRequest(d.request_id).then(() => loadRequests());
+                    }
+                  }}
+                  className="text-[0.68rem] font-medium text-red-400 hover:text-red-600 border border-border rounded-cooley px-2.5 py-1.5 transition-colors shrink-0"
+                >
+                  ✕
                 </button>
               </div>
             ))}
