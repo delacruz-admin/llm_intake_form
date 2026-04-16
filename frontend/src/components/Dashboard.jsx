@@ -125,7 +125,7 @@ export default function Dashboard({ onNavigate }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search requests…"
+              placeholder="Search entries…"
               className="w-full bg-white border border-border rounded-cooley text-[0.78rem] py-1 px-3 pl-7 focus:outline-none focus:border-cooley-red"
             />
           </div>
