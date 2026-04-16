@@ -116,7 +116,7 @@ export default function Dashboard({ onNavigate }) {
       {/* Table Section */}
       <div className="max-w-[1380px] mx-auto px-8 py-7">
         <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-1">All Requests</div>
-        <div className="font-serif text-lg text-text mb-0.5">Request Register</div>
+        <div className="font-serif text-lg text-text mb-0.5">Initiatives Register</div>
 
         <div className="flex gap-2.5 items-center flex-wrap py-4 border-b border-border">
           <div className="flex-1 min-w-[180px] max-w-[260px] relative">
