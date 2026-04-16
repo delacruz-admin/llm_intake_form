@@ -566,7 +566,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Date Submitted', formatDate(r.created_at)],
             ['Need Date', formatDate(r.need_date)],
             ['Promised Date', formatDate(r.promised_date)],
-            ['Assigned Technical Manager', r.assigned_to],
+            ['Assigned Technical Manager', r.assigned_to || 'Unassigned'],
             ['AI Summary', summary || <span className="text-text-muted italic text-[0.75rem]">Generating summary…</span>],
           ]} />
 
