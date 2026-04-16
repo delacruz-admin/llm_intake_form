@@ -205,24 +205,29 @@ function TriageModal({ request, onClose, onUpdated }) {
           <div className="border-t border-border pt-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Triage Actions</div>
 
-            {/* Status Transitions */}
-            {nextStatuses.length > 0 && (
-              <div className="mb-4">
-                <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-2">Move to</div>
-                <div className="flex gap-2 flex-wrap">
-                  {nextStatuses.map((s) => (
+            {/* Status */}
+            <div className="mb-4">
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-2">Status</div>
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                  const isCurrent = request.status === key;
+                  return (
                     <button
-                      key={s}
-                      onClick={() => handleStatusChange(s)}
-                      disabled={saving}
-                      className="text-[0.74rem] font-semibold text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-3 py-1.5 hover:bg-cooley-red hover:text-white transition-colors disabled:opacity-50"
+                      key={key}
+                      onClick={() => !isCurrent && handleStatusChange(key)}
+                      disabled={saving || isCurrent}
+                      className={`text-[0.68rem] font-semibold px-3 py-1.5 rounded-cooley border transition-colors ${
+                        isCurrent
+                          ? 'bg-cooley-red text-white border-cooley-red cursor-default'
+                          : 'text-text-dim bg-white border-border hover:border-cooley-red hover:text-cooley-red disabled:opacity-50'
+                      }`}
                     >
-                      {STATUS_CONFIG[s]?.label || s}
+                      {cfg.label}
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
 
             {/* Assign To */}
             <div className="mb-4">
