@@ -259,7 +259,7 @@ export default function Dashboard({ onNavigate, user }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Submitted', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Need Date', 'Promised'].map((h) => (
+                  {['ID', 'Submitted', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Need Date', 'Promised Date'].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
