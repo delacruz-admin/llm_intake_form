@@ -27,8 +27,6 @@ resource "aws_cognito_user_pool" "main" {
     required            = true
     mutable             = true
   }
-
-  tags = local.common_tags
 }
 
 resource "aws_cognito_user_pool_client" "web" {

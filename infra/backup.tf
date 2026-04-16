@@ -2,7 +2,6 @@
 
 resource "aws_backup_vault" "main" {
   name = "${local.name_prefix}-backup-vault"
-  tags = local.common_tags
 }
 
 resource "aws_backup_plan" "daily" {
@@ -17,8 +16,6 @@ resource "aws_backup_plan" "daily" {
       delete_after = 7
     }
   }
-
-  tags = local.common_tags
 }
 
 resource "aws_iam_role" "backup" {
@@ -32,8 +29,6 @@ resource "aws_iam_role" "backup" {
       Principal = { Service = "backup.amazonaws.com" }
     }]
   })
-
-  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy_attachment" "backup" {

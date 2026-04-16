@@ -2,7 +2,6 @@
 
 resource "aws_s3_bucket" "frontend" {
   bucket = "${local.name_prefix}-frontend-${data.aws_caller_identity.current.account_id}"
-  tags   = local.common_tags
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
@@ -69,8 +68,6 @@ resource "aws_cloudfront_distribution" "frontend" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
-
-  tags = local.common_tags
 }
 
 # ── S3 Bucket Policy (CloudFront only) ────────────────────

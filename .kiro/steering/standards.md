@@ -94,3 +94,39 @@ These rules apply to every new project. Follow them by default unless the user e
   - SPA routing: add custom error responses for 403 and 404 → `/index.html` with 200 status
 - Deploy flow: `npm run build` → `aws s3 sync dist/ s3://BUCKET --delete` → `aws cloudfront create-invalidation`
 - Output the CloudFront URL, bucket name, and distribution ID from Terraform outputs for easy scripting
+
+
+---
+
+## AWS Resource Tagging
+
+Every AWS resource that supports tags must be tagged. Tags enable cost allocation, access control, automation, and operational visibility across multiple products in a shared account.
+
+### Required Tags (all resources)
+
+| Tag Key | Source | Example | Purpose |
+|---|---|---|---|
+| `Project` | `var.project_name` | `arb-intake` | Identifies the product/application |
+| `Environment` | `var.environment` | `dev`, `staging`, `prod` | Deployment stage |
+| `ManagedBy` | Static | `terraform` | How the resource is managed |
+| `Owner` | `var.owner` | `technology-infrastructure` | Team responsible for the resource |
+| `CostCenter` | `var.cost_center` | `ti-arb` | Finance/chargeback allocation |
+| `Application` | `var.application_name` | `ARB Intake System` | Human-readable product name |
+
+### Implementation
+
+- Define all tags in `locals.common_tags` in `variables.tf` — never tag resources individually
+- Apply `tags = local.common_tags` to every taggable resource
+- Resources that don't support tags (IAM policies, bucket configs, API Gateway methods/integrations) are exempt
+- Use `default_tags` in the AWS provider block so tags propagate automatically to all resources, with `local.common_tags` as a fallback for resources created before provider-level tags were added
+
+### Naming Convention
+
+- Resource names follow `${var.project_name}-${var.environment}-<purpose>` (e.g., `arb-intake-dev-chat`)
+- Tag values are lowercase-kebab-case except `Application` which is human-readable
+
+### Cost Allocation
+
+- Enable `Project` and `CostCenter` as cost allocation tags in AWS Billing
+- Use these tags in Cost Explorer to filter spend by product
+- Each product in the account must have a unique `Project` + `CostCenter` combination

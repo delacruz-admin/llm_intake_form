@@ -11,8 +11,6 @@ resource "aws_iam_role" "chat_lambda" {
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
-
-  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy" "chat_lambda" {
@@ -67,8 +65,6 @@ resource "aws_iam_role" "requests_lambda" {
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
-
-  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy" "requests_lambda" {
@@ -157,8 +153,6 @@ resource "aws_lambda_function" "chat" {
       BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
-
-  tags = local.common_tags
 }
 
 resource "aws_lambda_function" "requests" {
@@ -178,8 +172,6 @@ resource "aws_lambda_function" "requests" {
       BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
-
-  tags = local.common_tags
 }
 
 
@@ -196,8 +188,6 @@ resource "aws_iam_role" "uploads_lambda" {
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
-
-  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy" "uploads_lambda" {
@@ -269,8 +259,6 @@ resource "aws_lambda_function" "uploads" {
       REQUESTS_TABLE     = aws_dynamodb_table.requests.name
     }
   }
-
-  tags = local.common_tags
 }
 
 resource "aws_lambda_permission" "uploads_apigw" {
@@ -295,8 +283,6 @@ resource "aws_iam_role" "portfolio_chat_lambda" {
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
-
-  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy" "portfolio_chat_lambda" {
@@ -360,8 +346,6 @@ resource "aws_lambda_function" "portfolio_chat" {
       BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
-
-  tags = local.common_tags
 }
 
 resource "aws_lambda_permission" "portfolio_chat_apigw" {

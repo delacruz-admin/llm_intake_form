@@ -7,8 +7,6 @@ resource "aws_api_gateway_rest_api" "main" {
   endpoint_configuration {
     types = ["REGIONAL"]
   }
-
-  tags = local.common_tags
 }
 
 # ── Cognito Authorizer ─────────────────────────────────────
@@ -1100,8 +1098,6 @@ resource "aws_api_gateway_stage" "prod" {
   deployment_id = aws_api_gateway_deployment.main.id
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = "prod"
-
-  tags = local.common_tags
 }
 
 # ── Lambda Permissions for API Gateway ─────────────────────

@@ -34,11 +34,32 @@ variable "frontend_local_url" {
   default     = "http://localhost:5173"
 }
 
+variable "owner" {
+  description = "Team that owns this product"
+  type        = string
+  default     = "technology-infrastructure"
+}
+
+variable "cost_center" {
+  description = "Cost center for billing allocation"
+  type        = string
+  default     = "ti-arb"
+}
+
+variable "application_name" {
+  description = "Human-readable application name"
+  type        = string
+  default     = "ARB Intake System"
+}
+
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
   common_tags = {
     Project     = var.project_name
     Environment = var.environment
     ManagedBy   = "terraform"
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Application = var.application_name
   }
 }

@@ -29,8 +29,6 @@ resource "aws_dynamodb_table" "sessions" {
   point_in_time_recovery {
     enabled = true
   }
-
-  tags = local.common_tags
 }
 
 # ARB requests + triage notes (low-volume, frequently queried/updated)
@@ -74,8 +72,6 @@ resource "aws_dynamodb_table" "requests" {
   point_in_time_recovery {
     enabled = true
   }
-
-  tags = local.common_tags
 }
 
 
@@ -83,7 +79,6 @@ resource "aws_dynamodb_table" "requests" {
 
 resource "aws_s3_bucket" "attachments" {
   bucket = "${local.name_prefix}-attachments-${data.aws_caller_identity.current.account_id}"
-  tags   = local.common_tags
 }
 
 resource "aws_s3_bucket_versioning" "attachments" {
