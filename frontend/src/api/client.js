@@ -111,3 +111,8 @@ export async function uploadFileToS3(presignedUrl, file) {
 export function listAttachments(requestId) {
   return request(`/requests/${requestId}/attachments`);
 }
+
+/** Delete a request. */
+export function deleteRequest(requestId) {
+  return request(`/requests/${requestId}`, { method: 'DELETE' });
+}

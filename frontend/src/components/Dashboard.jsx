@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listRequests, updateRequest, addNote, getNotes, listAttachments } from '../api/client';
+import { listRequests, updateRequest, addNote, getNotes, listAttachments, deleteRequest } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
@@ -137,6 +137,19 @@ function TriageModal({ request, onClose, onUpdated }) {
     } catch (err) {
       showToast(`Error: ${err.message}`);
     } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Delete ${request.request_id}? This cannot be undone.`)) return;
+    setSaving(true);
+    try {
+      await deleteRequest(request.request_id);
+      onClose();
+      onUpdated();
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
       setSaving(false);
     }
   }
@@ -377,6 +390,17 @@ function TriageModal({ request, onClose, onUpdated }) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Delete */}
+        <div className="px-5 pb-4 border-t border-border pt-4">
+          <button
+            onClick={handleDelete}
+            disabled={saving}
+            className="text-[0.72rem] font-medium text-red-600 hover:text-white hover:bg-red-600 border border-red-300 rounded-cooley px-3 py-1.5 transition-colors disabled:opacity-50"
+          >
+            Delete Request
+          </button>
         </div>
 
         {/* Toast inside modal */}

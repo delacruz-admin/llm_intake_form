@@ -30,6 +30,8 @@ def handler(event, context):
             return submit_request(event)
         elif method == "PUT" and "id" in path_params:
             return update_request(path_params["id"], event)
+        elif method == "DELETE" and "id" in path_params:
+            return delete_request(path_params["id"])
         elif method == "POST" and "id" in path_params and resource.endswith("/notes"):
             return add_note(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/notes"):
@@ -266,6 +268,30 @@ def get_notes(request_id):
         notes.append(item)
 
     return _response(200, {"notes": notes, "count": len(notes)})
+
+
+def delete_request(request_id):
+    """Delete a request and all its notes and attachments."""
+    # Query all items for this request (META, NOTEs, ATTACHments)
+    response = requests_table.query(
+        KeyConditionExpression="PK = :pk",
+        ExpressionAttributeValues={":pk": f"REQUEST#{request_id}"},
+    )
+
+    items = response.get("Items", [])
+    if not items:
+        return _response(404, {"error": "Request not found"})
+
+    # Batch delete all items
+    with requests_table.batch_writer() as batch:
+        for item in items:
+            batch.delete_item(Key={"PK": item["PK"], "SK": item["SK"]})
+
+    return _response(200, {
+        "request_id": request_id,
+        "deleted_items": len(items),
+        "message": "Request deleted.",
+    })
 
 
 def _response(status_code: int, body: dict) -> dict:
