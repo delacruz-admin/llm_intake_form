@@ -112,6 +112,7 @@ export default function App() {
             }
             user={user}
             onAttachmentUploaded={() => setAttachmentRefreshKey((k) => k + 1)}
+            isResumingDraft={!!activeDraftId}
           />
           <PreviewPanel fields={fields} sessionId={sessionId} onFieldUpdate={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))} attachmentRefreshKey={attachmentRefreshKey} draftId={activeDraftId} />
         </div>

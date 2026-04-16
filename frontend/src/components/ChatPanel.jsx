@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { sendChatMessage, getUploadUrl, uploadFileToS3 } from '../api/client';
 
-export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate, user, onAttachmentUploaded }) {
+export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate, user, onAttachmentUploaded, isResumingDraft }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -15,9 +15,16 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
   // Send initial greeting on mount
   useEffect(() => {
     if (messages.length === 0) {
-      const initMsg = user?.name
-        ? `__INIT__: The logged-in user's name is ${user.name}. Greet them by first name. Explain that they can fill out the intake form directly in the panel to the right, or if they prefer, you can guide them through it conversationally. Ask how they'd like to proceed.`
-        : '__INIT__: Greet the user. Explain that they can fill out the intake form directly in the panel to the right, or if they prefer, you can guide them through it conversationally. Ask how they\'d like to proceed.';
+      let initMsg;
+      if (isResumingDraft) {
+        initMsg = user?.name
+          ? `__INIT__: The logged-in user's name is ${user.name}. They are resuming a previously saved draft. Welcome them back by first name, let them know their saved progress has been restored in the panel to the right, and ask how you can help — they can continue filling it out directly or ask you to guide them through the remaining fields.`
+          : '__INIT__: The user is resuming a previously saved draft. Let them know their saved progress has been restored in the panel to the right, and ask how you can help.';
+      } else {
+        initMsg = user?.name
+          ? `__INIT__: The logged-in user's name is ${user.name}. Greet them by first name. Explain that they can fill out the intake form directly in the panel to the right, or if they prefer, you can guide them through it conversationally. Ask how they'd like to proceed.`
+          : '__INIT__: Greet the user. Explain that they can fill out the intake form directly in the panel to the right, or if they prefer, you can guide them through it conversationally. Ask how they\'d like to proceed.';
+      }
       handleSend(initMsg, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
