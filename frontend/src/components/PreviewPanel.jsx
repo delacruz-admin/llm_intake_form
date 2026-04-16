@@ -189,7 +189,7 @@ export default function PreviewPanel({ fields, sessionId }) {
       </div>
 
       {/* Sections */}
-      <div className="flex-1 overflow-y-scroll p-3.5 flex flex-col gap-2.5">
+      <div className="flex-1 overflow-y-scroll p-3.5 flex flex-col gap-2.5 min-h-0">
         {visibleSections.map((section) => {
           const complete = isSectionComplete(section);
           const active = isSectionActive(section);
@@ -197,7 +197,7 @@ export default function PreviewPanel({ fields, sessionId }) {
           return (
             <div
               key={section.id}
-              className={`bg-white border border-border rounded-cooley overflow-hidden transition-colors ${
+              className={`bg-white border border-border rounded-cooley overflow-hidden transition-colors shrink-0 ${
                 complete ? 'border-l-[3px] border-l-semantic-green' : active ? 'border-l-[3px] border-l-cooley-red' : ''
               }`}
             >
