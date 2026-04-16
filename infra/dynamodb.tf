@@ -26,6 +26,10 @@ resource "aws_dynamodb_table" "sessions" {
   # PK: SESSION#<id>, SK: MSG#<timestamp> — chat messages
   # PK: SESSION#<id>, SK: FIELDS          — extracted intake fields
 
+  point_in_time_recovery {
+    enabled = true
+  }
+
   tags = local.common_tags
 }
 
@@ -66,6 +70,10 @@ resource "aws_dynamodb_table" "requests" {
   # PK: REQUEST#<id>, SK: META            — request record
   # PK: REQUEST#<id>, SK: NOTE#<ts>#<id>  — triage notes
   # GSI1PK: REQUESTS, GSI1SK: STATUS#<status>#<timestamp> — list/filter
+
+  point_in_time_recovery {
+    enabled = true
+  }
 
   tags = local.common_tags
 }
