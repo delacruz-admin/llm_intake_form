@@ -79,7 +79,7 @@ function SlaCountdown({ createdAt, status }) {
 
   const label = diffDays > 0 ? `${diffDays}d ${diffHours % 24}h` : `${diffHours}h`;
 
-  return <span className={`font-mono text-[0.6rem] ${color}`}>SLA: {label}</span>;
+  return <span className={`font-mono text-[0.6rem] ${color}`}>{label}</span>;
 }
 
 export default function Dashboard({ onNavigate, user }) {
