@@ -39,6 +39,14 @@ def handler(event, context):
             return update_annotation(path_params["id"], event)
         elif method == "DELETE" and "id" in path_params and resource.endswith("/annotations"):
             return delete_annotation(path_params["id"], event)
+        elif method == "PUT" and "id" in path_params and resource.endswith("/notes"):
+            return update_note(path_params["id"], event)
+        elif method == "DELETE" and "id" in path_params and resource.endswith("/notes"):
+            return delete_note(path_params["id"], event)
+        elif method == "PUT" and "id" in path_params and resource.endswith("/activity"):
+            return update_activity(path_params["id"], event)
+        elif method == "DELETE" and "id" in path_params and resource.endswith("/activity"):
+            return delete_activity(path_params["id"], event)
         elif method == "PUT" and "id" in path_params:
             return update_request(path_params["id"], event)
         elif method == "DELETE" and "id" in path_params:
@@ -47,18 +55,10 @@ def handler(event, context):
             return add_note(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/notes"):
             return get_notes(path_params["id"])
-        elif method == "PUT" and "id" in path_params and resource.endswith("/notes"):
-            return update_note(path_params["id"], event)
-        elif method == "DELETE" and "id" in path_params and resource.endswith("/notes"):
-            return delete_note(path_params["id"], event)
         elif method == "POST" and "id" in path_params and resource.endswith("/activity"):
             return add_activity(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/activity"):
             return get_activity(path_params["id"])
-        elif method == "PUT" and "id" in path_params and resource.endswith("/activity"):
-            return update_activity(path_params["id"], event)
-        elif method == "DELETE" and "id" in path_params and resource.endswith("/activity"):
-            return delete_activity(path_params["id"], event)
         elif method == "POST" and "id" in path_params and resource.endswith("/annotations"):
             return add_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/annotations"):
