@@ -196,9 +196,9 @@ export default function TriagePage({ requestId, onNavigate }) {
   const r = request;
 
   return (
-    <div className="flex-1 overflow-y-scroll bg-surface-secondary">
+    <div className="flex-1 flex flex-col overflow-hidden bg-surface-secondary">
       {/* Page Header */}
-      <div className="bg-white border-b border-border py-5">
+      <div className="bg-white border-b border-border py-5 shrink-0">
         <div className="max-w-[1380px] mx-auto px-8">
           <button onClick={() => onNavigate('dashboard')} className="text-[0.72rem] text-cooley-red hover:underline mb-2 inline-block">← Back to Dashboard</button>
           <div className="flex items-start justify-between gap-4">
@@ -215,11 +215,11 @@ export default function TriagePage({ requestId, onNavigate }) {
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="max-w-[1380px] mx-auto px-8 py-6 grid grid-cols-[1fr_380px] gap-6">
+      {/* Two-column layout — each column scrolls independently */}
+      <div className="max-w-[1380px] mx-auto px-8 py-6 grid grid-cols-[1fr_380px] gap-6 flex-1 min-h-0">
 
-        {/* LEFT — Request Details */}
-        <div>
+        {/* LEFT — Request Details (scrollable) */}
+        <div className="overflow-y-scroll min-h-0 pr-2">
           <Section label="Summary" fields={[
             ['Status', <StatusBadge status={r.status} />],
             ['Criticality', r.criticality ? <CritBadge value={r.criticality} /> : null],
@@ -297,8 +297,8 @@ export default function TriagePage({ requestId, onNavigate }) {
           ]} />
         </div>
 
-        {/* RIGHT — Triage Actions */}
-        <div>
+        {/* RIGHT — Triage Actions (scrollable) */}
+        <div className="overflow-y-scroll min-h-0 pl-2">
           {/* Status */}
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Status</div>
