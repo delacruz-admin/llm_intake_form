@@ -57,8 +57,8 @@ function Field({ label, value }) {
   );
 }
 
-function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation, onDeleteAnnotation, isReviewer }) {
-  const [collapsed, setCollapsed] = useState(false);
+function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation, onDeleteAnnotation, isReviewer, defaultCollapsed = true }) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const filled = fields.filter(([, val]) => val && val !== '—');
   if (filled.length === 0) return null;
   return (
@@ -560,7 +560,7 @@ export default function TriagePage({ requestId, onNavigate, user }) {
 
         {/* LEFT — Request Details (scrollable) */}
         <div className="overflow-y-scroll min-h-0 pr-2">
-          <Section label="Summary" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
+          <Section label="Summary" defaultCollapsed={false} annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Status', <StatusBadge status={r.status} />],
             ['Criticality', r.criticality ? <CritBadge value={r.criticality} /> : null],
             ['Date Submitted', formatDate(r.created_at)],
