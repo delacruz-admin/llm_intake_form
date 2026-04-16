@@ -259,7 +259,7 @@ export default function Dashboard({ onNavigate, user }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Submitted', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Assigned', 'Need Date', 'Promised', ''].map((h) => (
+                  {['ID', 'Submitted', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Need Date', 'Promised', ''].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
@@ -278,7 +278,6 @@ export default function Dashboard({ onNavigate, user }) {
                     <td className="py-2.5 px-4">{r.criticality ? <CritBadge value={r.criticality} /> : '—'}</td>
                     <td className="py-2.5 px-4"><StatusBadge status={r.status} /></td>
                     <td className="py-2.5 px-4"><SlaCountdown createdAt={r.created_at} status={r.status} /></td>
-                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.assigned_to || '—'}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.need_date)}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.promised_date ? formatDate(r.promised_date) : 'TBD'}</td>
                     <td className="py-2.5 px-4 text-right">
