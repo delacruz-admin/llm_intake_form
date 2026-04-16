@@ -219,10 +219,12 @@ function ReviewChat({ requestId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
   }, [messages, loading]);
 
   async function handleSend() {
@@ -252,7 +254,7 @@ function ReviewChat({ requestId }) {
         <div className="text-[0.6rem] text-text-muted ml-auto font-mono">Ask about this request</div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2 min-h-0">
+      <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2 min-h-0">
         {messages.length === 0 && (
           <div className="text-[0.75rem] text-text-muted italic text-center mt-8">
             Ask questions about this request — risks, gaps, dependencies, or anything else.
@@ -284,7 +286,6 @@ function ReviewChat({ requestId }) {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       <div className="px-3 py-2 border-t border-border flex gap-2">
