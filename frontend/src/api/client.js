@@ -161,3 +161,8 @@ export function deleteAnnotation(requestId, sk) {
     body: JSON.stringify({ sk }),
   });
 }
+
+/** Get an LLM-generated summary of a request. */
+export function getRequestSummary(requestId) {
+  return request(`/requests/${requestId}/summary`);
+}

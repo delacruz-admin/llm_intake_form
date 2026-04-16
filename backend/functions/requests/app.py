@@ -12,10 +12,12 @@ from datetime import datetime
 
 REQUESTS_TABLE = os.environ["REQUESTS_TABLE"]
 SESSIONS_TABLE = os.environ["SESSIONS_TABLE"]
+BEDROCK_MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0")
 
 dynamodb = boto3.resource("dynamodb")
 requests_table = dynamodb.Table(REQUESTS_TABLE)
 sessions_table = dynamodb.Table(SESSIONS_TABLE)
+bedrock = boto3.client("bedrock-runtime")
 
 
 def handler(event, context):
@@ -49,6 +51,8 @@ def handler(event, context):
             return add_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/annotations"):
             return get_annotations(path_params["id"])
+        elif method == "GET" and "id" in path_params and resource.endswith("/summary"):
+            return generate_summary(path_params["id"])
         elif method == "GET" and "id" in path_params:
             return get_request(path_params["id"])
         elif method == "GET":
@@ -406,6 +410,39 @@ def delete_annotation(request_id, event):
     )
 
     return _response(200, {"message": "Annotation deleted."})
+
+
+def generate_summary(request_id):
+    """Generate an LLM summary of the intake request."""
+    result = requests_table.get_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": "META"}
+    )
+    item = result.get("Item")
+    if not item:
+        return _response(404, {"error": "Request not found"})
+
+    # Build context from all fields
+    fields_text = "\n".join(
+        f"{k}: {v}" for k, v in item.items()
+        if k not in ("PK", "SK", "GSI1PK", "GSI1SK", "session_id") and v
+    )
+
+    prompt = f"""Summarize this technology infrastructure intake request in 2-3 concise sentences for an Architecture Review Board reviewer. Focus on what is being requested, why it matters, and any key constraints or risks. Do not use bullet points.
+
+Request data:
+{fields_text}"""
+
+    try:
+        response = bedrock.converse(
+            modelId=BEDROCK_MODEL_ID,
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            inferenceConfig={"maxTokens": 200, "temperature": 0.3},
+        )
+        summary = response["output"]["message"]["content"][0]["text"]
+        return _response(200, {"summary": summary})
+    except Exception as e:
+        print(f"Summary generation error: {e}")
+        return _response(500, {"error": "Failed to generate summary"})
 
 
 def delete_request(request_id):

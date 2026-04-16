@@ -107,6 +107,14 @@ resource "aws_iam_role_policy" "requests_lambda" {
       {
         Effect = "Allow"
         Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
@@ -165,8 +173,9 @@ resource "aws_lambda_function" "requests" {
 
   environment {
     variables = {
-      REQUESTS_TABLE = aws_dynamodb_table.requests.name
-      SESSIONS_TABLE = aws_dynamodb_table.sessions.name
+      REQUESTS_TABLE   = aws_dynamodb_table.requests.name
+      SESSIONS_TABLE   = aws_dynamodb_table.sessions.name
+      BEDROCK_MODEL_ID = var.bedrock_model_id
     }
   }
 

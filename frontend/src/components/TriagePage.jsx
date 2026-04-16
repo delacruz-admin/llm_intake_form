@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation } from '../api/client';
+import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
@@ -268,6 +268,7 @@ export default function TriagePage({ requestId, onNavigate }) {
   const [notes, setNotes] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [annotations, setAnnotations] = useState([]);
+  const [summary, setSummary] = useState('');
   const [noteText, setNoteText] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [promisedDate, setPromisedDate] = useState('');
@@ -293,6 +294,11 @@ export default function TriagePage({ requestId, onNavigate }) {
       setNotes(notesData.notes || []);
       setAttachments(attachData.attachments || []);
       setAnnotations(annotData.annotations || []);
+
+      // Load summary in background (non-blocking)
+      getRequestSummary(requestId)
+        .then((data) => setSummary(data.summary || ''))
+        .catch(() => setSummary(''));
     } catch (err) {
       showToast(`Error loading: ${err.message}`);
     } finally {
@@ -468,6 +474,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Need Date', formatDate(r.need_date)],
             ['Promised Date', formatDate(r.promised_date)],
             ['Assigned To', r.assigned_to],
+            ['AI Summary', summary || <span className="text-text-muted italic text-[0.75rem]">Generating summary…</span>],
           ]} />
 
           <Section label="A1 · Requestor Information" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
