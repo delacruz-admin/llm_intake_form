@@ -13,6 +13,7 @@ export default function App() {
   const [sessionId, setSessionId] = useState('');
   const [fields, setFields] = useState({});
   const [messages, setMessages] = useState([]);
+  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
 
   useEffect(() => {
     if (window.location.hash.includes('id_token')) {
@@ -84,8 +85,9 @@ export default function App() {
               setFields((prev) => ({ ...prev, ...newFields }))
             }
             user={user}
+            onAttachmentUploaded={() => setAttachmentRefreshKey((k) => k + 1)}
           />
-          <PreviewPanel fields={fields} sessionId={sessionId} onFieldUpdate={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))} />
+          <PreviewPanel fields={fields} sessionId={sessionId} onFieldUpdate={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))} attachmentRefreshKey={attachmentRefreshKey} />
         </div>
       )}
     </div>

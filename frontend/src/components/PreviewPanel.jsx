@@ -129,7 +129,7 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function AttachmentSection({ section, sessionId, complete, active, isOptional }) {
+function AttachmentSection({ section, sessionId, complete, active, isOptional, refreshKey }) {
   const [manualToggle, setManualToggle] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState('');
@@ -141,14 +141,14 @@ function AttachmentSection({ section, sessionId, complete, active, isOptional })
     setManualToggle(isExpanded ? false : true);
   }
 
-  // Load attachments when session exists
-  useState(() => {
+  // Load attachments when session exists or refreshKey changes
+  useEffect(() => {
     if (sessionId) {
       listAttachments(sessionId)
         .then((data) => setAttachments(data.attachments || []))
         .catch(() => {});
     }
-  });
+  }, [sessionId, refreshKey]);
 
   async function handleUpload(category, e) {
     const file = e.target.files?.[0];
@@ -379,7 +379,7 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
   );
 }
 
-export default function PreviewPanel({ fields, sessionId, onFieldUpdate, draftId, onDraftSaved }) {
+export default function PreviewPanel({ fields, sessionId, onFieldUpdate, draftId, onDraftSaved, attachmentRefreshKey }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(null);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -486,6 +486,7 @@ export default function PreviewPanel({ fields, sessionId, onFieldUpdate, draftId
                 complete={false}
                 active={false}
                 isOptional={true}
+                refreshKey={attachmentRefreshKey}
               />
             );
           }

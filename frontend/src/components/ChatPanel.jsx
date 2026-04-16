@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { sendChatMessage, getUploadUrl, uploadFileToS3 } from '../api/client';
 
-export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate, user }) {
+export default function ChatPanel({ sessionId, onSessionId, messages, onMessages, onFieldsUpdate, user, onAttachmentUploaded }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -63,32 +63,40 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
     }
   }
 
-  async function handleFileUpload(e) {
+  const [pendingFile, setPendingFile] = useState(null);
+
+  function handleFileSelect(e) {
     const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function handleFileUploadWithCategory(category) {
+    const file = pendingFile;
     if (!file || !sessionId) return;
+    setPendingFile(null);
     setUploading(true);
 
-    onMessages((prev) => [...prev, { role: 'user', content: `📎 Uploading: ${file.name}` }]);
+    onMessages((prev) => [...prev, { role: 'user', content: `📎 Uploading: ${file.name} (${category})` }]);
 
     try {
-      // We need a request_id to attach files. For now, use session_id as a temp reference.
       const data = await getUploadUrl(
         sessionId,
         file.name,
         file.type || 'application/octet-stream',
-        file.name.toLowerCase().includes('diagram') ? 'logical-diagram' : 'vendor-doc'
+        category
       );
       await uploadFileToS3(data.upload_url, file);
 
-      onMessages((prev) => [...prev, { role: 'assistant', content: `Got it — "${file.name}" uploaded successfully. 📎` }]);
+      onMessages((prev) => [...prev, { role: 'assistant', content: `Got it — "${file.name}" uploaded as ${category === 'logical-diagram' ? 'Logical Diagram' : category === 'vendor-doc' ? 'Vendor Document' : 'Other Artifact'}. 📎` }]);
 
-      // Tell the chat model about the upload
-      await handleSend(`[File uploaded: ${file.name}]`, true);
+      // Notify parent to refresh attachments
+      if (onAttachmentUploaded) onAttachmentUploaded();
     } catch (err) {
       onMessages((prev) => [...prev, { role: 'assistant', content: `Upload failed: ${err.message}` }]);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
@@ -150,13 +158,44 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Category picker for file upload */}
+      {pendingFile && (
+        <div className="px-6 py-2.5 border-t border-border bg-amber-50 shrink-0">
+          <div className="text-[0.75rem] text-text-dim mb-2">
+            What type of attachment is <span className="font-semibold text-text">"{pendingFile.name}"</span>?
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { key: 'logical-diagram', label: 'Logical Diagram' },
+              { key: 'vendor-doc', label: 'Vendor Document' },
+              { key: 'other', label: 'Other Artifact' },
+            ].map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => handleFileUploadWithCategory(cat.key)}
+                disabled={uploading}
+                className="text-[0.72rem] font-semibold text-amber-700 bg-white border border-amber-300 rounded-cooley px-3 py-1.5 hover:bg-amber-500 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {cat.label}
+              </button>
+            ))}
+            <button
+              onClick={() => setPendingFile(null)}
+              className="text-[0.72rem] text-text-muted hover:text-text px-2 py-1.5"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="px-6 py-3 border-t border-border bg-surface-secondary shrink-0">
         <div className="flex gap-2 items-end">
           <input
             type="file"
             ref={fileInputRef}
-            onChange={handleFileUpload}
+            onChange={handleFileSelect}
             className="hidden"
             accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.svg,.pptx,.xlsx,.txt,.drawio,.vsdx"
           />
