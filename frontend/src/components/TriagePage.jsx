@@ -658,7 +658,7 @@ export default function TriagePage({ requestId, onNavigate, user }) {
       </div>
 
       {/* Two-column layout — each column scrolls independently */}
-      <div className="max-w-[1380px] mx-auto px-8 py-6 grid grid-cols-[1fr_380px] gap-6 flex-1 min-h-0">
+      <div className="max-w-[1380px] mx-auto px-8 py-6 grid grid-cols-[1fr_500px] gap-6 flex-1 min-h-0">
 
         {/* LEFT — Request Details (scrollable) */}
         <div className="overflow-y-scroll min-h-0 pr-2">
