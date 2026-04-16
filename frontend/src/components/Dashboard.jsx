@@ -3,7 +3,7 @@ import { listRequests, updateRequest, addNote, getNotes } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
-  'received-pending': { label: 'Received - Pending', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
+  'received-pending': { label: 'Received, Pending Review', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
   'under-review': { label: 'Under Review', dot: 'bg-orange-400', bg: 'bg-orange-50 border-orange-200 text-orange-800' },
   'accepted-discovery': { label: 'Accepted - In Discovery', dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-300 text-amber-700' },
   'in-backlog': { label: 'In Backlog', dot: 'bg-blue-400', bg: 'bg-blue-50 border-blue-200 text-blue-800' },
