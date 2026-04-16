@@ -18,6 +18,13 @@ const CRIT_CONFIG = {
   Low: 'bg-green-50 border-green-300 text-green-800',
 };
 
+const CRIT_ACTIVE = {
+  Emergency: 'bg-red-600 border-red-700 text-white',
+  High: 'bg-amber-500 border-amber-600 text-white',
+  Medium: 'bg-gray-500 border-gray-600 text-white',
+  Low: 'bg-green-600 border-green-700 text-white',
+};
+
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG['received-pending'];
   return (
@@ -580,7 +587,7 @@ export default function TriagePage({ requestId, onNavigate }) {
                   disabled={saving || r.criticality === c}
                   className={`text-[0.68rem] font-semibold px-3 py-1.5 rounded-cooley border transition-colors ${
                     r.criticality === c
-                      ? 'bg-cooley-red text-white border-cooley-red'
+                      ? CRIT_ACTIVE[c]
                       : `disabled:opacity-30 ${CRIT_CONFIG[c]}`
                   }`}
                 >
