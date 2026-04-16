@@ -166,3 +166,11 @@ export function deleteAnnotation(requestId, sk) {
 export function getRequestSummary(requestId) {
   return request(`/requests/${requestId}/summary`);
 }
+
+/** Chat with the AI about a request during review. */
+export function reviewChat(requestId, message, history = []) {
+  return request(`/requests/${requestId}/review-chat`, {
+    method: 'POST',
+    body: JSON.stringify({ message, history }),
+  });
+}

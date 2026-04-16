@@ -53,6 +53,8 @@ def handler(event, context):
             return get_annotations(path_params["id"])
         elif method == "GET" and "id" in path_params and resource.endswith("/summary"):
             return generate_summary(path_params["id"])
+        elif method == "POST" and "id" in path_params and resource.endswith("/review-chat"):
+            return review_chat(path_params["id"], event)
         elif method == "GET" and "id" in path_params:
             return get_request(path_params["id"])
         elif method == "GET":
@@ -443,6 +445,75 @@ Request data:
     except Exception as e:
         print(f"Summary generation error: {e}")
         return _response(500, {"error": "Failed to generate summary"})
+
+
+def review_chat(request_id, event):
+    """Chat with the AI about a specific request during review."""
+    body = json.loads(event.get("body", "{}"))
+    user_message = body.get("message", "").strip()
+    history = body.get("history", [])
+
+    if not user_message:
+        return _response(400, {"error": "message is required"})
+
+    # Load the request data for context
+    result = requests_table.get_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": "META"}
+    )
+    item = result.get("Item")
+    if not item:
+        return _response(404, {"error": "Request not found"})
+
+    fields_text = "\n".join(
+        f"{k}: {v}" for k, v in item.items()
+        if k not in ("PK", "SK", "GSI1PK", "GSI1SK", "session_id") and v
+    )
+
+    # Load annotations for additional context
+    annot_response = requests_table.query(
+        KeyConditionExpression="PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues={
+            ":pk": f"REQUEST#{request_id}",
+            ":sk": "ANNOT#",
+        },
+    )
+    annotations_text = ""
+    for a in annot_response.get("Items", []):
+        annotations_text += f"\n- [{a.get('field_name', '')}] {a.get('author', '')}: {a.get('text', '')}"
+
+    system_prompt = f"""You are an Architecture Review Board assistant helping a reviewer analyze a technology infrastructure intake request. Answer questions about this request concisely and accurately based on the data provided. If something isn't in the data, say so.
+
+REQUEST DATA:
+{fields_text}
+
+{"REVIEWER ANNOTATIONS:" + annotations_text if annotations_text else ""}
+
+Keep responses concise — 2-4 sentences unless the reviewer asks for more detail. Focus on facts from the request data. You can highlight risks, gaps, or things that need clarification."""
+
+    # Build messages for Bedrock
+    messages = []
+    for msg in history:
+        messages.append({
+            "role": msg["role"],
+            "content": [{"text": msg["content"]}],
+        })
+    messages.append({
+        "role": "user",
+        "content": [{"text": user_message}],
+    })
+
+    try:
+        response = bedrock.converse(
+            modelId=BEDROCK_MODEL_ID,
+            messages=messages,
+            system=[{"text": system_prompt}],
+            inferenceConfig={"maxTokens": 500, "temperature": 0.5},
+        )
+        reply = response["output"]["message"]["content"][0]["text"]
+        return _response(200, {"message": reply})
+    except Exception as e:
+        print(f"Review chat error: {e}")
+        return _response(500, {"error": "Failed to generate response"})
 
 
 def delete_request(request_id):

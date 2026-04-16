@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary } from '../api/client';
+import { useState, useEffect, useRef } from 'react';
+import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary, reviewChat } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
@@ -211,6 +211,99 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, on
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ReviewChat({ requestId }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  async function handleSend() {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const newMessages = [...messages, { role: 'user', content: text }];
+    setMessages(newMessages);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const data = await reviewChat(requestId, text, messages);
+      setMessages([...newMessages, { role: 'assistant', content: data.message }]);
+    } catch (err) {
+      setMessages([...newMessages, { role: 'assistant', content: `Error: ${err.message}` }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-white border border-border rounded-cooley flex flex-col mb-4" style={{ height: '360px' }}>
+      <div className="px-4 py-2.5 border-b border-border bg-surface-secondary rounded-t-cooley flex items-center gap-2">
+        <div className="w-5 h-5 rounded bg-cooley-red flex items-center justify-center text-white text-[0.45rem] font-mono font-semibold">AI</div>
+        <div className="text-[0.72rem] font-semibold text-text">Review Assistant</div>
+        <div className="text-[0.6rem] text-text-muted ml-auto font-mono">Ask about this request</div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2 min-h-0">
+        {messages.length === 0 && (
+          <div className="text-[0.75rem] text-text-muted italic text-center mt-8">
+            Ask questions about this request — risks, gaps, dependencies, or anything else.
+          </div>
+        )}
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex gap-2 items-start ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div className={`w-5 h-5 rounded shrink-0 flex items-center justify-center text-[0.4rem] font-mono font-semibold mt-0.5 ${
+              msg.role === 'user' ? 'bg-surface-tertiary border border-border-strong text-text-dim' : 'bg-cooley-red text-white'
+            }`}>
+              {msg.role === 'user' ? 'You' : 'AI'}
+            </div>
+            <div className={`max-w-[85%] px-2.5 py-1.5 text-[0.78rem] leading-relaxed ${
+              msg.role === 'user'
+                ? 'bg-cooley-red-light border border-cooley-red-mid rounded-tl-md rounded-tr-sm rounded-b-md'
+                : 'bg-surface-secondary border border-border rounded-tl-sm rounded-tr-md rounded-b-md'
+            }`}>
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex gap-2 items-start">
+            <div className="w-5 h-5 rounded bg-cooley-red flex items-center justify-center text-white text-[0.4rem] font-mono font-semibold">AI</div>
+            <div className="bg-surface-secondary border border-border rounded-tl-sm rounded-tr-md rounded-b-md px-2.5 py-1.5 flex items-center gap-1">
+              <span className="w-1 h-1 bg-text-muted rounded-full animate-bounce" />
+              <span className="w-1 h-1 bg-text-muted rounded-full animate-bounce [animation-delay:0.15s]" />
+              <span className="w-1 h-1 bg-text-muted rounded-full animate-bounce [animation-delay:0.3s]" />
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="px-3 py-2 border-t border-border flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Ask about this request…"
+          className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.78rem] py-1.5 px-2.5 focus:outline-none focus:border-cooley-red"
+        />
+        <button
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          className="text-[0.68rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-1.5 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 }
@@ -658,6 +751,9 @@ export default function TriagePage({ requestId, onNavigate }) {
               </div>
             </div>
           )}
+
+          {/* Review Chat */}
+          <ReviewChat requestId={requestId} />
 
           {/* Notes */}
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
