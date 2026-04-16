@@ -314,11 +314,22 @@ function TriageModal({ request, onClose, onUpdated }) {
                     <div className="flex-1 min-w-0">
                       <div className="text-[0.82rem] text-text font-medium truncate">{a.filename}</div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="font-mono text-[0.6rem] text-text-muted">{a.content_type}</span>
                         <span className="font-mono text-[0.6rem] text-text-muted">{a.category}</span>
                         <span className="font-mono text-[0.6rem] text-text-muted">{formatDate(a.uploaded_at)}</span>
                       </div>
                     </div>
+                    {a.download_url ? (
+                      <a
+                        href={a.download_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[0.68rem] font-semibold text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-3 py-1.5 hover:bg-cooley-red hover:text-white transition-colors no-underline shrink-0"
+                      >
+                        Download
+                      </a>
+                    ) : (
+                      <span className="text-[0.68rem] text-text-muted italic shrink-0">No file</span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -26,6 +26,9 @@ def handler(event, context):
         if method == "POST":
             return generate_upload_url(request_id, event)
         elif method == "GET":
+            params = event.get("queryStringParameters") or {}
+            if "s3_key" in params:
+                return generate_download_url(params["s3_key"])
             return list_attachments(request_id)
         else:
             return _response(405, {"error": "Method not allowed"})
@@ -83,7 +86,7 @@ def generate_upload_url(request_id, event):
 
 
 def list_attachments(request_id):
-    """List all attachments for a request."""
+    """List all attachments for a request, each with a presigned download URL."""
     if not request_id:
         return _response(400, {"error": "request_id is required"})
 
@@ -100,9 +103,38 @@ def list_attachments(request_id):
     for item in response.get("Items", []):
         item.pop("PK", None)
         item.pop("SK", None)
+        # Generate a presigned download URL for each attachment
+        if item.get("s3_key"):
+            try:
+                item["download_url"] = s3.generate_presigned_url(
+                    "get_object",
+                    Params={
+                        "Bucket": ATTACHMENTS_BUCKET,
+                        "Key": item["s3_key"],
+                    },
+                    ExpiresIn=3600,
+                )
+            except Exception:
+                item["download_url"] = None
         attachments.append(item)
 
     return _response(200, {"attachments": attachments})
+
+
+def generate_download_url(s3_key):
+    """Generate a presigned GET URL for downloading a file."""
+    try:
+        url = s3.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": ATTACHMENTS_BUCKET,
+                "Key": s3_key,
+            },
+            ExpiresIn=3600,
+        )
+        return _response(200, {"download_url": url})
+    except Exception as e:
+        return _response(500, {"error": str(e)})
 
 
 def _response(status_code, body):
