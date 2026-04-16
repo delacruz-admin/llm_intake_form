@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { listRequests } from '../api/client';
 
 const STATUS_CONFIG = {
+  'draft': { label: 'Draft', dot: 'bg-purple-400', bg: 'bg-purple-50 border-purple-200 text-purple-700' },
   'received-pending': { label: 'Received, Pending Review', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
   'under-review': { label: 'Under Review', dot: 'bg-orange-400', bg: 'bg-orange-50 border-orange-200 text-orange-800' },
   'accepted-discovery': { label: 'Accepted - In Discovery', dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-300 text-amber-700' },
@@ -140,6 +141,7 @@ export default function Dashboard({ onNavigate, user }) {
             className="bg-white border border-border rounded-cooley text-text-dim text-[0.76rem] py-1 px-2.5 focus:outline-none focus:border-cooley-red"
           >
             <option value="">All</option>
+            <option value="draft">Draft</option>
             <option value="received-pending">Received, Pending Review</option>
             <option value="under-review">Under Review</option>
             <option value="accepted-discovery">Accepted - In Discovery</option>

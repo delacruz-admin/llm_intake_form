@@ -31,6 +31,10 @@ def handler(event, context):
         print(f"Handler: method={method}, resource={resource}, path_params={path_params}")
         if method == "POST" and resource == "/requests":
             return submit_request(event)
+        elif method == "POST" and resource == "/drafts":
+            return save_draft(event)
+        elif method == "PUT" and resource == "/drafts":
+            return update_draft(event)
         elif method == "PUT" and "id" in path_params and resource.endswith("/annotations"):
             return update_annotation(path_params["id"], event)
         elif method == "DELETE" and "id" in path_params and resource.endswith("/annotations"):
@@ -64,6 +68,85 @@ def handler(event, context):
     except Exception as e:
         print(f"Error: {e}")
         return _response(500, {"error": "Internal server error"})
+
+
+def save_draft(event):
+    """Save current intake fields as a draft."""
+    body = json.loads(event.get("body", "{}"))
+    session_id = body.get("session_id", "")
+    fields = body.get("fields", {})
+    submitter = body.get("submitter", "")
+    submitter_email = body.get("submitter_email", "")
+
+    if not session_id:
+        return _response(400, {"error": "session_id is required"})
+
+    # Generate a draft ID
+    draft_id = f"ARB-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
+    now = datetime.utcnow().isoformat()
+
+    draft_data = {
+        "PK": f"REQUEST#{draft_id}",
+        "SK": "META",
+        "GSI1PK": "REQUESTS",
+        "GSI1SK": f"STATUS#draft#{now}",
+        "request_id": draft_id,
+        "session_id": session_id,
+        "status": "draft",
+        "created_at": now,
+        "updated_at": now,
+        "submitter": submitter,
+        "submitter_email": submitter_email,
+    }
+
+    # Copy all fields
+    for k, v in fields.items():
+        if v and k not in ("submitter", "submitter_email"):
+            draft_data[k] = v
+
+    requests_table.put_item(Item=draft_data)
+
+    return _response(201, {
+        "request_id": draft_id,
+        "status": "draft",
+        "message": "Draft saved.",
+    })
+
+
+def update_draft(event):
+    """Update an existing draft with current fields."""
+    body = json.loads(event.get("body", "{}"))
+    request_id = body.get("request_id", "")
+    fields = body.get("fields", {})
+
+    if not request_id:
+        return _response(400, {"error": "request_id is required"})
+
+    now = datetime.utcnow().isoformat()
+
+    # Build update from fields
+    update_parts = ["updated_at = :updated"]
+    attr_values = {":updated": now}
+    attr_names = {}
+
+    for i, (k, v) in enumerate(fields.items()):
+        if k in ("submitter", "submitter_email", "request_id", "session_id", "status", "PK", "SK", "GSI1PK", "GSI1SK"):
+            continue
+        update_parts.append(f"#{k} = :f{i}")
+        attr_names[f"#{k}"] = k
+        attr_values[f":f{i}"] = v or ""
+
+    if len(update_parts) <= 1:
+        return _response(200, {"message": "Nothing to update."})
+
+    requests_table.update_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": "META"},
+        UpdateExpression="SET " + ", ".join(update_parts),
+        ExpressionAttributeNames=attr_names if attr_names else None,
+        ExpressionAttributeValues=attr_values,
+    )
+
+    return _response(200, {"request_id": request_id, "message": "Draft updated."})
 
 
 def submit_request(event):

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { submitRequest, getUploadUrl, uploadFileToS3, listAttachments } from '../api/client';
+import { submitRequest, saveDraft, updateDraft, getUploadUrl, uploadFileToS3, listAttachments } from '../api/client';
 
 const SECTIONS = [
   {
@@ -375,9 +375,11 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
   );
 }
 
-export default function PreviewPanel({ fields, sessionId, onFieldUpdate }) {
+export default function PreviewPanel({ fields, sessionId, onFieldUpdate, draftId, onDraftSaved }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState(draftId || null);
   const [toast, setToast] = useState('');
 
   const filledRequired = REQUIRED_KEYS.filter((k) => fields[k]).length;
@@ -411,6 +413,28 @@ export default function PreviewPanel({ fields, sessionId, onFieldUpdate }) {
       setTimeout(() => setToast(''), 4000);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    if (!sessionId || savingDraft) return;
+    setSavingDraft(true);
+    try {
+      if (currentDraftId) {
+        await updateDraft(currentDraftId, fields);
+        setToast(`Draft updated: ${currentDraftId}`);
+      } else {
+        const data = await saveDraft(sessionId, fields, fields.submitter || '', fields.submitter_email || '');
+        setCurrentDraftId(data.request_id);
+        if (onDraftSaved) onDraftSaved(data.request_id);
+        setToast(`Draft saved: ${data.request_id}`);
+      }
+      setTimeout(() => setToast(''), 3000);
+    } catch (err) {
+      setToast(`Error: ${err.message}`);
+      setTimeout(() => setToast(''), 4000);
+    } finally {
+      setSavingDraft(false);
     }
   }
 
@@ -477,8 +501,8 @@ export default function PreviewPanel({ fields, sessionId, onFieldUpdate }) {
         })}
       </div>
 
-      {/* Submit */}
-      <div className="px-3.5 py-3 border-t border-border bg-white shrink-0">
+      {/* Actions */}
+      <div className="px-3.5 py-3 border-t border-border bg-white shrink-0 flex flex-col gap-2">
         <button
           onClick={handleSubmit}
           disabled={!ready || submitting || !!submitted}
@@ -490,6 +514,15 @@ export default function PreviewPanel({ fields, sessionId, onFieldUpdate }) {
         >
           {submitted ? `Submitted: ${submitted}` : submitting ? 'Submitting…' : 'Submit to ARB Queue'}
         </button>
+        {!submitted && (
+          <button
+            onClick={handleSaveDraft}
+            disabled={savingDraft || !sessionId}
+            className="w-full py-2 rounded-cooley text-[0.72rem] font-semibold text-text-dim bg-white border border-border hover:border-cooley-red hover:text-cooley-red transition-colors disabled:opacity-50"
+          >
+            {savingDraft ? 'Saving…' : currentDraftId ? `Update Draft (${currentDraftId})` : 'Save as Draft'}
+          </button>
+        )}
       </div>
 
       {toast && (

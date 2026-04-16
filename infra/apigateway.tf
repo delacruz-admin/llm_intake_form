@@ -118,6 +118,88 @@ resource "aws_api_gateway_integration" "requests_post" {
   uri                     = aws_lambda_function.requests.invoke_arn
 }
 
+# ── /drafts resource ───────────────────────────────────────
+
+resource "aws_api_gateway_resource" "drafts" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+  path_part   = "drafts"
+}
+
+resource "aws_api_gateway_method" "drafts_post" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.drafts.id
+  http_method   = "POST"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "drafts_post" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.drafts.id
+  http_method             = aws_api_gateway_method.drafts_post.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
+}
+
+resource "aws_api_gateway_method" "drafts_put" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.drafts.id
+  http_method   = "PUT"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "drafts_put" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.drafts.id
+  http_method             = aws_api_gateway_method.drafts_put.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.requests.invoke_arn
+}
+
+resource "aws_api_gateway_method" "drafts_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.drafts.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "drafts_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.drafts.id
+  http_method = aws_api_gateway_method.drafts_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "drafts_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.drafts.id
+  http_method = aws_api_gateway_method.drafts_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "drafts_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.drafts.id
+  http_method = aws_api_gateway_method.drafts_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,PUT,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+  depends_on = [aws_api_gateway_integration.drafts_options]
+}
+
 resource "aws_api_gateway_method" "requests_get" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   resource_id   = aws_api_gateway_resource.requests.id
@@ -758,6 +840,8 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.requests_id_notes.id,
       aws_api_gateway_method.chat_post.id,
       aws_api_gateway_method.requests_post.id,
+      aws_api_gateway_method.drafts_post.id,
+      aws_api_gateway_method.drafts_put.id,
       aws_api_gateway_method.requests_get.id,
       aws_api_gateway_method.requests_id_get.id,
       aws_api_gateway_method.requests_id_put.id,
@@ -768,6 +852,8 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_method.notes_delete.id,
       aws_api_gateway_integration.chat_post.id,
       aws_api_gateway_integration.requests_post.id,
+      aws_api_gateway_integration.drafts_post.id,
+      aws_api_gateway_integration.drafts_put.id,
       aws_api_gateway_integration.requests_get.id,
       aws_api_gateway_integration.requests_id_get.id,
       aws_api_gateway_integration.requests_id_put.id,

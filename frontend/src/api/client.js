@@ -57,6 +57,22 @@ export function submitRequest(sessionId, submitter = '', submitterEmail = '') {
   });
 }
 
+/** Save current fields as a draft. */
+export function saveDraft(sessionId, fields, submitter = '', submitterEmail = '') {
+  return request('/drafts', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId, fields, submitter, submitter_email: submitterEmail }),
+  });
+}
+
+/** Update an existing draft. */
+export function updateDraft(requestId, fields) {
+  return request('/drafts', {
+    method: 'PUT',
+    body: JSON.stringify({ request_id: requestId, fields }),
+  });
+}
+
 /** List all requests, optionally filtered by status. */
 export function listRequests(status = '') {
   const qs = status ? `?status=${status}` : '';
