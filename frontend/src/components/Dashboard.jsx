@@ -3,13 +3,12 @@ import { listRequests, updateRequest, addNote, getNotes } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
-  submitted: { label: 'Submitted', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
-  'in-triage': { label: 'In Triage', dot: 'bg-orange-400', bg: 'bg-orange-50 border-orange-200 text-orange-800' },
-  'in-discovery': { label: 'In Discovery', dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-300 text-amber-700' },
+  'received-pending': { label: 'Received - Pending', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
+  'under-review': { label: 'Under Review', dot: 'bg-orange-400', bg: 'bg-orange-50 border-orange-200 text-orange-800' },
+  'accepted-discovery': { label: 'Accepted - In Discovery', dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-300 text-amber-700' },
   'in-backlog': { label: 'In Backlog', dot: 'bg-blue-400', bg: 'bg-blue-50 border-blue-200 text-blue-800' },
-  'in-progress': { label: 'In Progress', dot: 'bg-blue-500', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
-  complete: { label: 'Complete', dot: 'bg-green-500', bg: 'bg-green-50 border-green-300 text-green-800' },
-  deferred: { label: 'Deferred', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-muted' },
+  'active': { label: 'Active', dot: 'bg-blue-500', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
+  'deferred': { label: 'Deferred', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-muted' },
 };
 
 const CRIT_CONFIG = {
@@ -20,17 +19,16 @@ const CRIT_CONFIG = {
 };
 
 const STATUS_TRANSITIONS = {
-  submitted: ['in-triage'],
-  'in-triage': ['in-discovery', 'in-backlog', 'deferred'],
-  'in-discovery': ['in-progress', 'in-backlog', 'deferred'],
-  'in-backlog': ['in-progress', 'deferred'],
-  'in-progress': ['complete', 'deferred'],
-  complete: [],
-  deferred: ['in-triage'],
+  'received-pending': ['under-review'],
+  'under-review': ['accepted-discovery', 'in-backlog', 'deferred'],
+  'accepted-discovery': ['active', 'in-backlog', 'deferred'],
+  'in-backlog': ['active', 'deferred'],
+  'active': ['deferred'],
+  'deferred': ['under-review'],
 };
 
 function StatusBadge({ status }) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.submitted;
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG['received-pending'];
   return (
     <span className={`inline-flex items-center gap-1.5 font-mono text-[0.62rem] px-2 py-0.5 rounded-sm border ${cfg.bg}`}>
       <span className={`w-[5px] h-[5px] rounded-full ${cfg.dot}`} />
@@ -380,11 +378,11 @@ export default function Dashboard({ onNavigate }) {
 
   const statCounts = {
     all: requests.length,
-    submitted: requests.filter((r) => r.status === 'submitted').length,
-    'in-triage': requests.filter((r) => r.status === 'in-triage').length,
-    'in-discovery': requests.filter((r) => r.status === 'in-discovery').length,
-    'in-progress': requests.filter((r) => r.status === 'in-progress').length,
-    complete: requests.filter((r) => r.status === 'complete').length,
+    'received-pending': requests.filter((r) => r.status === 'received-pending').length,
+    'under-review': requests.filter((r) => r.status === 'under-review').length,
+    'accepted-discovery': requests.filter((r) => r.status === 'accepted-discovery').length,
+    'in-backlog': requests.filter((r) => r.status === 'in-backlog').length,
+    'active': requests.filter((r) => r.status === 'active').length,
   };
 
   return (
@@ -399,11 +397,11 @@ export default function Dashboard({ onNavigate }) {
           <div className="grid grid-cols-6 gap-3 mt-6">
             {[
               { key: 'all', label: 'Total', sub: 'All requests', color: 'text-text', border: 'border-t-border' },
-              { key: 'submitted', label: 'Submitted', sub: 'Awaiting triage', color: 'text-text-muted', border: 'border-t-border-strong' },
-              { key: 'in-triage', label: 'In Triage', sub: 'Under review', color: 'text-orange-700', border: 'border-t-orange-400' },
-              { key: 'in-discovery', label: 'Discovery', sub: 'Active scoping', color: 'text-amber-600', border: 'border-t-amber-400' },
-              { key: 'in-progress', label: 'In Progress', sub: 'Actively working', color: 'text-blue-700', border: 'border-t-blue-500' },
-              { key: 'complete', label: 'Complete', sub: 'Delivered', color: 'text-green-700', border: 'border-t-green-500' },
+              { key: 'received-pending', label: 'Received', sub: 'Pending review', color: 'text-text-muted', border: 'border-t-border-strong' },
+              { key: 'under-review', label: 'Under Review', sub: 'Being evaluated', color: 'text-orange-700', border: 'border-t-orange-400' },
+              { key: 'accepted-discovery', label: 'Discovery', sub: 'Accepted, scoping', color: 'text-amber-600', border: 'border-t-amber-400' },
+              { key: 'in-backlog', label: 'Backlog', sub: 'Queued for work', color: 'text-blue-700', border: 'border-t-blue-400' },
+              { key: 'active', label: 'Active', sub: 'In progress', color: 'text-blue-700', border: 'border-t-blue-500' },
             ].map((s) => (
               <button
                 key={s.key}
@@ -444,11 +442,11 @@ export default function Dashboard({ onNavigate }) {
             className="bg-white border border-border rounded-cooley text-text-dim text-[0.76rem] py-1 px-2.5 focus:outline-none focus:border-cooley-red"
           >
             <option value="">All</option>
-            <option value="submitted">Submitted</option>
-            <option value="in-triage">In Triage</option>
-            <option value="in-discovery">In Discovery</option>
-            <option value="in-progress">In Progress</option>
-            <option value="complete">Complete</option>
+            <option value="received-pending">Received - Pending</option>
+            <option value="under-review">Under Review</option>
+            <option value="accepted-discovery">Accepted - In Discovery</option>
+            <option value="in-backlog">In Backlog</option>
+            <option value="active">Active</option>
             <option value="deferred">Deferred</option>
           </select>
           <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="text-[0.72rem] text-text-muted border border-border rounded-cooley px-2.5 py-1 hover:text-cooley-red hover:border-cooley-red-mid transition-colors">

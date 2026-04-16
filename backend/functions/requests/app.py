@@ -72,10 +72,10 @@ def submit_request(event):
         "PK": f"REQUEST#{request_id}",
         "SK": "META",
         "GSI1PK": "REQUESTS",
-        "GSI1SK": f"STATUS#submitted#{now}",
+        "GSI1SK": f"STATUS#received-pending#{now}",
         "request_id": request_id,
         "session_id": session_id,
-        "status": "submitted",
+        "status": "received-pending",
         "created_at": now,
         "updated_at": now,
         # Submitter (from login)
@@ -102,7 +102,7 @@ def submit_request(event):
 
     return _response(201, {
         "request_id": request_id,
-        "status": "submitted",
+        "status": "received-pending",
         "message": "Intake submitted to ARB queue.",
     })
 
@@ -157,8 +157,8 @@ def list_requests(event):
 
 
 VALID_STATUSES = [
-    "submitted", "in-triage", "in-discovery", "in-backlog",
-    "in-progress", "complete", "deferred",
+    "received-pending", "under-review", "accepted-discovery",
+    "in-backlog", "active", "deferred",
 ]
 
 VALID_CRITICALITIES = ["Emergency", "High", "Medium", "Low"]
