@@ -184,48 +184,112 @@ function TriageModal({ request, onClose, onUpdated }) {
         </div>
 
         <div className="p-5 flex flex-col gap-5">
-          {/* Info Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Status</div>
-              <StatusBadge status={request.status} />
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Criticality</div>
-              {request.criticality ? <CritBadge value={request.criticality} /> : <span className="text-[0.82rem] text-text-dim">—</span>}
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Team</div>
-              <div className="text-[0.82rem] text-text font-semibold">{request.team || '—'}</div>
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">POC</div>
-              <div className="text-[0.82rem] text-text-dim">{request.poc_name || '—'} {request.poc_email ? `(${request.poc_email})` : ''}</div>
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Request Type</div>
-              <div className="text-[0.82rem] text-text-dim">{request.request_type || '—'}</div>
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Date Submitted</div>
-              <div className="text-[0.82rem] text-text-dim">{formatDate(request.created_at)}</div>
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Need Date</div>
-              <div className="text-[0.82rem] text-text-dim">{formatDate(request.need_date)}</div>
-            </div>
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Promised Date</div>
-              <div className="text-[0.82rem] text-text-dim">{formatDate(request.promised_date)}</div>
-            </div>
-          </div>
-
-          {request.description && (
-            <div>
-              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1.5">Description</div>
-              <div className="bg-surface-secondary border border-border rounded-cooley p-3 text-[0.8rem] text-text-dim leading-relaxed">{request.description}</div>
-            </div>
-          )}
+          {/* All Request Details by Section */}
+          {[
+            {
+              label: 'Summary', fields: [
+                ['Status', <StatusBadge status={request.status} />],
+                ['Criticality', request.criticality ? <CritBadge value={request.criticality} /> : null],
+                ['Date Submitted', formatDate(request.created_at)],
+                ['Need Date', formatDate(request.need_date)],
+                ['Promised Date', formatDate(request.promised_date)],
+                ['Assigned To', request.assigned_to],
+              ],
+            },
+            {
+              label: 'A1 · Requestor Information', fields: [
+                ['Submitter', request.submitter],
+                ['Submitter Email', request.submitter_email],
+                ['Initiative Team / Department', request.team],
+                ['Initiative POC', request.poc_name],
+                ['Initiative POC Email', request.poc_email],
+                ['Initiative Executive Sponsor', request.exec_sponsor],
+              ],
+            },
+            {
+              label: 'A2 · Request Details', fields: [
+                ['Request Type', request.request_type],
+                ['Application Type', request.app_type],
+                ['Title', request.title],
+                ['Description', request.description],
+                ['Deliverables', request.deliverables],
+              ],
+            },
+            {
+              label: 'A3 · Business Context & Impact', fields: [
+                ['Business Outcomes', request.business_outcomes],
+                ['Business Criticality', request.criticality],
+                ['Impact if Not Implemented', request.impact_if_not_done],
+                ['Scale of Impact', request.impact_scale],
+                ['Anticipated Need Date', formatDate(request.need_date)],
+              ],
+            },
+            {
+              label: 'A4 · Dependencies', fields: [
+                ['Vendor Involved', request.vendor_involved],
+                ['Vendor Name', request.vendor_name],
+                ['System Dependencies', request.system_dependencies],
+                ['Discovery Stakeholders', request.discovery_stakeholders],
+              ],
+            },
+            {
+              label: 'C1 · Environments', fields: [
+                ['Environments Needed', request.environments_needed],
+                ['Hosting Preference', request.hosting_preference],
+                ['New AWS Account', request.new_aws_account],
+                ['AWS Account Name', request.aws_account_name],
+                ['AWS Region', request.aws_region],
+              ],
+            },
+            {
+              label: 'C2 · IAM', fields: [
+                ['SSO Integration', request.sso_needed],
+                ['Access Patterns', request.access_patterns],
+              ],
+            },
+            {
+              label: 'C3 · Architecture', fields: [
+                ['Deployment Model', request.deployment_model],
+                ['Compute Requirements', request.compute_needed],
+                ['Database Requirements', request.database_needed],
+                ['Storage Requirements', request.storage_needed],
+              ],
+            },
+            {
+              label: 'C4 · Network', fields: [
+                ['Connectivity', request.connectivity_type],
+                ['VPC Requirements', request.vpc_requirements],
+              ],
+            },
+            {
+              label: 'C5 · Security', fields: [
+                ['Compliance Frameworks', request.compliance_frameworks],
+                ['Data Classification', request.data_classification],
+                ['Encryption', request.encryption_requirements],
+              ],
+            },
+            {
+              label: 'C6 · Comments', fields: [
+                ['Additional Comments', request.additional_comments],
+              ],
+            },
+          ]
+            .filter((section) => section.fields.some(([, val]) => val && val !== '—'))
+            .map((section) => (
+              <div key={section.label}>
+                <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-cooley-red mb-2 font-mono">{section.label}</div>
+                <div className="bg-surface-secondary border border-border rounded-cooley p-3 flex flex-col gap-2">
+                  {section.fields
+                    .filter(([, val]) => val && val !== '—')
+                    .map(([label, val]) => (
+                      <div key={label}>
+                        <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted">{label}</div>
+                        <div className="text-[0.8rem] text-text-dim leading-relaxed">{typeof val === 'string' ? val : val}</div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
 
           {/* ── Triage Actions ──────────────────────── */}
           <div className="border-t border-border pt-4">
