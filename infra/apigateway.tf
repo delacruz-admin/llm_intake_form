@@ -575,10 +575,27 @@ resource "aws_api_gateway_integration_response" "attachments_options" {
   status_code = "200"
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,DELETE,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"  = "'*'"
   }
   depends_on = [aws_api_gateway_integration.attachments_options]
+}
+
+resource "aws_api_gateway_method" "attachments_delete" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.requests_id_attachments.id
+  http_method   = "DELETE"
+  authorization = "COGNITO_USER_POOLS"
+  authorizer_id = aws_api_gateway_authorizer.cognito.id
+}
+
+resource "aws_api_gateway_integration" "attachments_delete" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.requests_id_attachments.id
+  http_method             = aws_api_gateway_method.attachments_delete.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.uploads.invoke_arn
 }
 
 # ── /requests/{id}/annotations resource ────────────────────
@@ -866,6 +883,8 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_method.attachments_get.id,
       aws_api_gateway_integration.attachments_post.id,
       aws_api_gateway_integration.attachments_get.id,
+      aws_api_gateway_method.attachments_delete.id,
+      aws_api_gateway_integration.attachments_delete.id,
       aws_api_gateway_method.annotations_post.id,
       aws_api_gateway_method.annotations_get.id,
       aws_api_gateway_integration.annotations_post.id,

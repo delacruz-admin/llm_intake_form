@@ -212,6 +212,7 @@ resource "aws_iam_role_policy" "uploads_lambda" {
         Action = [
           "s3:PutObject",
           "s3:GetObject",
+          "s3:DeleteObject",
         ]
         Resource = "${aws_s3_bucket.attachments.arn}/*"
       },
@@ -227,6 +228,7 @@ resource "aws_iam_role_policy" "uploads_lambda" {
         Action = [
           "dynamodb:PutItem",
           "dynamodb:Query",
+          "dynamodb:DeleteItem",
         ]
         Resource = [
           aws_dynamodb_table.requests.arn,

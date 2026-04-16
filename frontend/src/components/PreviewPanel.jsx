@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { submitRequest, saveDraft, updateDraft, getUploadUrl, uploadFileToS3, listAttachments } from '../api/client';
+import { submitRequest, saveDraft, updateDraft, getUploadUrl, uploadFileToS3, listAttachments, deleteAttachment } from '../api/client';
 
 const SECTIONS = [
   {
@@ -217,10 +217,25 @@ function AttachmentSection({ section, sessionId, complete, active, isOptional, r
                 {files.length > 0 ? (
                   <div className="flex flex-col gap-1">
                     {files.map((f) => (
-                      <div key={f.file_id} className="flex items-center gap-2 bg-surface-secondary border border-border rounded-cooley px-2.5 py-1.5">
+                      <div key={f.file_id} className="flex items-center gap-2 bg-surface-secondary border border-border rounded-cooley px-2.5 py-1.5 group/file">
                         <span className="text-[0.75rem]">📎</span>
                         <span className="text-[0.75rem] text-text truncate flex-1">{f.filename}</span>
                         <span className="text-[0.58rem] font-mono text-text-muted shrink-0">{formatDate(f.uploaded_at)}</span>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!window.confirm(`Delete "${f.filename}"?`)) return;
+                            try {
+                              await deleteAttachment(sessionId, f.file_id, f.s3_key);
+                              const updated = await listAttachments(sessionId);
+                              setAttachments(updated.attachments || []);
+                            } catch (err) { console.error(err); }
+                          }}
+                          className="text-[0.6rem] text-text-muted hover:text-red-600 opacity-0 group-hover/file:opacity-100 transition-all shrink-0 px-1"
+                          title="Delete"
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>

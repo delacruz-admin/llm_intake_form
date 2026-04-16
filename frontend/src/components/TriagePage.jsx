@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary, reviewChat } from '../api/client';
+import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, deleteAttachment, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary, reviewChat } from '../api/client';
 
 const STATUS_CONFIG = {
   'received-pending': { label: 'Received, Pending Review', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
@@ -742,7 +742,7 @@ export default function TriagePage({ requestId, onNavigate, user }) {
               <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Attachments</div>
               <div className="flex flex-col gap-2">
                 {attachments.map((a) => (
-                  <div key={a.file_id} className="flex items-center gap-2 bg-surface-secondary border border-border rounded-cooley p-2.5">
+                  <div key={a.file_id} className="flex items-center gap-2 bg-surface-secondary border border-border rounded-cooley p-2.5 group/afile">
                     <span>📎</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-[0.78rem] text-text font-medium truncate">{a.filename}</div>
@@ -754,6 +754,22 @@ export default function TriagePage({ requestId, onNavigate, user }) {
                         Download
                       </a>
                     ) : <span className="text-[0.65rem] text-text-muted italic">No file</span>}
+                    {isReviewer && (
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm(`Delete "${a.filename}"?`)) return;
+                          try {
+                            await deleteAttachment(requestId, a.file_id, a.s3_key);
+                            await loadAll();
+                            showToast('Attachment deleted');
+                          } catch (err) { showToast(`Error: ${err.message}`); }
+                        }}
+                        className="text-[0.6rem] text-text-muted hover:text-red-600 opacity-0 group-hover/afile:opacity-100 transition-all shrink-0 px-1"
+                        title="Delete"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

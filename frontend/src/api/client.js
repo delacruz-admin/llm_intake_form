@@ -144,6 +144,14 @@ export function listAttachments(requestId) {
   return request(`/requests/${requestId}/attachments`);
 }
 
+/** Delete an attachment. */
+export function deleteAttachment(requestId, fileId, s3Key) {
+  return request(`/requests/${requestId}/attachments`, {
+    method: 'DELETE',
+    body: JSON.stringify({ file_id: fileId, s3_key: s3Key }),
+  });
+}
+
 /** Delete a request. */
 export function deleteRequest(requestId) {
   return request(`/requests/${requestId}`, { method: 'DELETE' });
