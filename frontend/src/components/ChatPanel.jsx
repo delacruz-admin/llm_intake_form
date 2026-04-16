@@ -16,8 +16,8 @@ export default function ChatPanel({ sessionId, onSessionId, messages, onMessages
   useEffect(() => {
     if (messages.length === 0) {
       const initMsg = user?.name
-        ? `__INIT__: The logged-in user's name is ${user.name}. Greet them by first name and begin the intake conversation.`
-        : '__INIT__: Start the intake conversation now. Begin your greeting as the ARB Intake Assistant.';
+        ? `__INIT__: The logged-in user's name is ${user.name}. Greet them by first name and say "I'll help you submit an ARB Intake Request." Then ask the first question.`
+        : '__INIT__: Greet the user and say "I\'ll help you submit an ARB Intake Request." Then ask the first question.';
       handleSend(initMsg, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
