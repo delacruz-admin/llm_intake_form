@@ -280,3 +280,94 @@ resource "aws_lambda_permission" "uploads_apigw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
 }
+
+
+# ── Portfolio Chat Lambda ──────────────────────────────────
+
+resource "aws_iam_role" "portfolio_chat_lambda" {
+  name = "${local.name_prefix}-portfolio-chat-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "portfolio_chat_lambda" {
+  name = "${local.name_prefix}-portfolio-chat-lambda-policy"
+  role = aws_iam_role.portfolio_chat_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:Query",
+          "dynamodb:Scan",
+        ]
+        Resource = [
+          aws_dynamodb_table.requests.arn,
+          "${aws_dynamodb_table.requests.arn}/index/*",
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream",
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      },
+    ]
+  })
+}
+
+data "archive_file" "portfolio_chat_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/../backend/functions/portfolio_chat"
+  output_path = "${path.module}/.build/portfolio_chat.zip"
+}
+
+resource "aws_lambda_function" "portfolio_chat" {
+  function_name    = "${local.name_prefix}-portfolio-chat"
+  role             = aws_iam_role.portfolio_chat_lambda.arn
+  handler          = "app.handler"
+  runtime          = "python3.12"
+  timeout          = 60
+  memory_size      = 256
+  filename         = data.archive_file.portfolio_chat_lambda.output_path
+  source_code_hash = data.archive_file.portfolio_chat_lambda.output_base64sha256
+
+  environment {
+    variables = {
+      REQUESTS_TABLE   = aws_dynamodb_table.requests.name
+      BEDROCK_MODEL_ID = var.bedrock_model_id
+    }
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_lambda_permission" "portfolio_chat_apigw" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.portfolio_chat.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}

@@ -227,3 +227,11 @@ export function reviewChat(requestId, message, history = []) {
     body: JSON.stringify({ message, history }),
   });
 }
+
+/** Chat with the Portfolio Assistant about all ARB requests. */
+export function portfolioChat(message, history = []) {
+  return request('/portfolio-chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, history }),
+  });
+}

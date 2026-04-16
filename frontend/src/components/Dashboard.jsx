@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { listRequests, deleteRequest } from '../api/client';
+import { useState, useEffect, useRef } from 'react';
+import { listRequests, deleteRequest, portfolioChat } from '../api/client';
 
 const STATUS_CONFIG = {
   'draft': { label: 'Draft', dot: 'bg-purple-400', bg: 'bg-purple-50 border-purple-200 text-purple-700' },
@@ -91,6 +91,11 @@ export default function Dashboard({ onNavigate, user }) {
   const [statusFilter, setStatusFilter] = useState('');
   const [sortKey, setSortKey] = useState('');
   const [sortDir, setSortDir] = useState('asc');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
   useEffect(() => { loadRequests(); }, []);
 
@@ -318,6 +323,90 @@ export default function Dashboard({ onNavigate, user }) {
             </table>
           )}
         </div>
+      </div>
+
+      {/* Portfolio Assistant */}
+      <div className={`fixed bottom-0 right-6 z-50 transition-all ${chatOpen ? 'w-[420px]' : 'w-auto'}`}>
+        {chatOpen ? (
+          <div className="bg-white border border-border border-b-0 rounded-t-cooley shadow-lg flex flex-col" style={{ height: '480px' }}>
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-surface-secondary rounded-t-cooley">
+              <div>
+                <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red">Portfolio Assistant</div>
+                <div className="text-[0.7rem] text-text-dim">Ask about the ARB register</div>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="text-text-muted hover:text-text text-lg leading-none">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+              {chatMessages.length === 0 && (
+                <div className="text-[0.78rem] text-text-dim text-center mt-8">
+                  Ask me anything about the portfolio — trends, risks, comparisons, statistics.
+                </div>
+              )}
+              {chatMessages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-cooley px-3 py-2 text-[0.78rem] leading-relaxed ${
+                    m.role === 'user'
+                      ? 'bg-cooley-red text-white'
+                      : 'bg-surface-secondary text-text border border-border'
+                  }`}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-surface-secondary text-text-dim border border-border rounded-cooley px-3 py-2 text-[0.78rem]">Thinking...</div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const msg = chatInput.trim();
+                if (!msg || chatLoading) return;
+                const newMessages = [...chatMessages, { role: 'user', content: msg }];
+                setChatMessages(newMessages);
+                setChatInput('');
+                setChatLoading(true);
+                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                try {
+                  const history = newMessages.map((m) => ({ role: m.role, content: m.content }));
+                  const res = await portfolioChat(msg, history.slice(0, -1));
+                  setChatMessages([...newMessages, { role: 'assistant', content: res.reply }]);
+                } catch (err) {
+                  setChatMessages([...newMessages, { role: 'assistant', content: `Error: ${err.message}` }]);
+                } finally {
+                  setChatLoading(false);
+                  setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+                }
+              }}
+              className="flex gap-2 px-4 py-3 border-t border-border"
+            >
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask about the portfolio..."
+                className="flex-1 bg-white border border-border rounded-cooley text-[0.78rem] py-1.5 px-3 focus:outline-none focus:border-cooley-red"
+              />
+              <button
+                type="submit"
+                disabled={chatLoading || !chatInput.trim()}
+                className="bg-cooley-red text-white text-[0.72rem] font-semibold px-3 py-1.5 rounded-cooley hover:bg-cooley-red-dark disabled:opacity-40 transition-colors"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        ) : (
+          <button
+            onClick={() => setChatOpen(true)}
+            className="bg-cooley-red text-white rounded-t-cooley px-5 py-2.5 shadow-lg hover:bg-cooley-red-dark transition-colors flex items-center gap-2"
+          >
+            <span className="text-[0.78rem] font-semibold">Portfolio Assistant</span>
+          </button>
+        )}
       </div>
     </div>
   );
