@@ -207,6 +207,13 @@ resource "aws_iam_role_policy" "uploads_lambda" {
       {
         Effect = "Allow"
         Action = [
+          "s3:ListBucket",
+        ]
+        Resource = aws_s3_bucket.attachments.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "dynamodb:PutItem",
           "dynamodb:Query",
         ]
