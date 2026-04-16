@@ -119,7 +119,96 @@ function CriticalityPill({ value }) {
   );
 }
 
-function CollapsibleSection({ section, fields, complete, active, isOptional, hasData, filledCount }) {
+function EditableField({ fieldKey, label, value, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  // Sync draft when value changes from chat
+  const prevValue = useState(value)[0];
+  if (value !== prevValue && !editing) {
+    // handled via key prop or effect
+  }
+
+  function startEdit() {
+    setDraft(value);
+    setEditing(true);
+  }
+
+  function save() {
+    const trimmed = draft.trim();
+    if (trimmed !== value) {
+      onSave(fieldKey, trimmed || '');
+    }
+    setEditing(false);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      save();
+    }
+    if (e.key === 'Escape') {
+      setDraft(value);
+      setEditing(false);
+    }
+  }
+
+  // Submitter/email fields are auto-filled and shouldn't be editable
+  const readOnly = fieldKey === 'submitter' || fieldKey === 'submitter_email';
+
+  if (editing && !readOnly) {
+    return (
+      <div>
+        <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted leading-tight mb-0.5">
+          {label}
+        </div>
+        {value.length > 60 || fieldKey === 'description' || fieldKey === 'deliverables' || fieldKey === 'business_outcomes' || fieldKey === 'impact_if_not_done' || fieldKey === 'additional_comments' ? (
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={save}
+            onKeyDown={handleKeyDown}
+            rows={3}
+            className="w-full bg-white border border-cooley-red rounded-cooley text-[0.78rem] py-1 px-2 resize-none focus:outline-none"
+            autoFocus
+          />
+        ) : (
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={save}
+            onKeyDown={handleKeyDown}
+            className="w-full bg-white border border-cooley-red rounded-cooley text-[0.78rem] py-1 px-2 focus:outline-none"
+            autoFocus
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onClick={readOnly ? undefined : startEdit}
+      className={readOnly ? '' : 'cursor-text group/field'}
+    >
+      <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted leading-tight">
+        {label}
+      </div>
+      <div className={`text-[0.78rem] min-h-[16px] rounded px-0.5 -mx-0.5 transition-colors ${
+        readOnly ? '' : 'group-hover/field:bg-cooley-red-light'
+      } ${value ? 'text-text' : 'text-text-muted italic'}`}>
+        {fieldKey === 'criticality' && value ? (
+          <CriticalityPill value={value} />
+        ) : (
+          value || '—'
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CollapsibleSection({ section, fields, complete, active, isOptional, hasData, filledCount, onFieldUpdate }) {
   const [manualToggle, setManualToggle] = useState(null);
 
   // Auto-expand the active section, collapse others. Manual toggle overrides.
@@ -157,18 +246,13 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
       {isExpanded && (
         <div className="px-3 py-2.5 flex flex-col gap-1.5">
           {section.fields.map((f) => (
-            <div key={f.key}>
-              <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted leading-tight">
-                {f.label}
-              </div>
-              <div className={`text-[0.78rem] min-h-[16px] ${fields[f.key] ? 'text-text' : 'text-text-muted italic'}`}>
-                {f.key === 'criticality' && fields[f.key] ? (
-                  <CriticalityPill value={fields[f.key]} />
-                ) : (
-                  fields[f.key] || '—'
-                )}
-              </div>
-            </div>
+            <EditableField
+              key={f.key}
+              fieldKey={f.key}
+              label={f.label}
+              value={fields[f.key] || ''}
+              onSave={onFieldUpdate}
+            />
           ))}
         </div>
       )}
@@ -176,7 +260,7 @@ function CollapsibleSection({ section, fields, complete, active, isOptional, has
   );
 }
 
-export default function PreviewPanel({ fields, sessionId }) {
+export default function PreviewPanel({ fields, sessionId, onFieldUpdate }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(null);
   const [toast, setToast] = useState('');
@@ -258,6 +342,7 @@ export default function PreviewPanel({ fields, sessionId }) {
               isOptional={isOptional}
               hasData={hasData}
               filledCount={filledCount}
+              onFieldUpdate={onFieldUpdate}
             />
           );
         })}
