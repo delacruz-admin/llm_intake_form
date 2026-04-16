@@ -194,6 +194,10 @@ function TriageModal({ request, onClose, onUpdated }) {
               <div className="text-[0.82rem] text-text-dim">{request.request_type || '—'}</div>
             </div>
             <div>
+              <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Date Submitted</div>
+              <div className="text-[0.82rem] text-text-dim">{formatDate(request.created_at)}</div>
+            </div>
+            <div>
               <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-text-muted mb-1">Need Date</div>
               <div className="text-[0.82rem] text-text-dim">{formatDate(request.need_date)}</div>
             </div>
@@ -518,7 +522,7 @@ export default function Dashboard({ onNavigate }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'Assigned', 'Need Date', 'Promised', ''].map((h) => (
+                  {['ID', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'Assigned', 'Submitted', 'Need Date', 'Promised', ''].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
@@ -536,6 +540,7 @@ export default function Dashboard({ onNavigate }) {
                     <td className="py-2.5 px-4">{r.criticality ? <CritBadge value={r.criticality} /> : '—'}</td>
                     <td className="py-2.5 px-4"><StatusBadge status={r.status} /></td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.assigned_to || '—'}</td>
+                    <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.created_at)}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.need_date)}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.promised_date)}</td>
                     <td className="py-2.5 px-4 text-right">
