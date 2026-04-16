@@ -508,7 +508,7 @@ export default function TriagePage({ requestId, onNavigate }) {
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Criticality</div>
             <div className="flex gap-2 flex-wrap">
-              {['Emergency', 'High', 'Medium', 'Low'].map((c) => (
+              {['Low', 'Medium', 'High', 'Emergency'].map((c) => (
                 <button
                   key={c}
                   onClick={() => handleCritChange(c)}
