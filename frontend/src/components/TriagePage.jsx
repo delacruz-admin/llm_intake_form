@@ -666,7 +666,7 @@ export default function TriagePage({ requestId, onNavigate }) {
 
           {/* Assign To */}
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
-            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Assign To</div>
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Assigned Technical Manager</div>
             <div className="flex gap-2">
               <input
                 type="text"
