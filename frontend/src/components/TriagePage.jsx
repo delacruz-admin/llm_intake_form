@@ -59,29 +59,39 @@ function Field({ label, value }) {
 }
 
 function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation, onDeleteAnnotation }) {
+  const [collapsed, setCollapsed] = useState(false);
   const filled = fields.filter(([, val]) => val && val !== '—');
   if (filled.length === 0) return null;
   return (
     <div className="mb-5">
-      <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-cooley-red mb-2 font-mono">{label}</div>
-      <div className="bg-white border border-border rounded-cooley p-4 flex flex-col gap-3">
-        {filled.map(([lbl, val]) => {
-          const fieldKey = lbl.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-          const fieldAnnotations = annotations.filter((a) => a.field_name === fieldKey);
-          return (
-            <AnnotatedField
-              key={lbl}
-              label={lbl}
-              fieldKey={fieldKey}
-              value={val}
-              annotations={fieldAnnotations}
-              onAdd={onAddAnnotation}
-              onEdit={onEditAnnotation}
-              onDelete={onDeleteAnnotation}
-            />
-          );
-        })}
-      </div>
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full text-left text-[0.6rem] font-semibold uppercase tracking-wider text-cooley-red mb-2 font-mono flex items-center gap-2 hover:opacity-80 transition-opacity"
+      >
+        <span className={`text-[0.5rem] transition-transform ${collapsed ? '-rotate-90' : ''}`}>▼</span>
+        {label}
+        <span className="text-[0.55rem] text-text-muted font-normal ml-auto">{filled.length} field{filled.length !== 1 ? 's' : ''}</span>
+      </button>
+      {!collapsed && (
+        <div className="bg-white border border-border rounded-cooley p-4 flex flex-col gap-3">
+          {filled.map(([lbl, val]) => {
+            const fieldKey = lbl.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+            const fieldAnnotations = annotations.filter((a) => a.field_name === fieldKey);
+            return (
+              <AnnotatedField
+                key={lbl}
+                label={lbl}
+                fieldKey={fieldKey}
+                value={val}
+                annotations={fieldAnnotations}
+                onAdd={onAddAnnotation}
+                onEdit={onEditAnnotation}
+                onDelete={onDeleteAnnotation}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
