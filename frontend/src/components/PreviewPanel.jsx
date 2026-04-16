@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { submitRequest, saveDraft, updateDraft, getUploadUrl, uploadFileToS3, listAttachments } from '../api/client';
 
 const SECTIONS = [
@@ -238,11 +238,12 @@ function EditableField({ fieldKey, label, value, onSave, hint }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
-  // Sync draft when value changes from chat
-  const prevValue = useState(value)[0];
-  if (value !== prevValue && !editing) {
-    // handled via key prop or effect
-  }
+  // Sync draft when value changes externally (e.g., from chat)
+  useEffect(() => {
+    if (!editing) {
+      setDraft(value);
+    }
+  }, [value, editing]);
 
   function startEdit() {
     setDraft(value);
@@ -251,9 +252,7 @@ function EditableField({ fieldKey, label, value, onSave, hint }) {
 
   function save() {
     const trimmed = draft.trim();
-    if (trimmed !== value) {
-      onSave(fieldKey, trimmed || '');
-    }
+    onSave(fieldKey, trimmed);
     setEditing(false);
   }
 
