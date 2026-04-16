@@ -129,3 +129,19 @@ export function addAnnotation(requestId, fieldName, text, author) {
 export function getAnnotations(requestId) {
   return request(`/requests/${requestId}/annotations`);
 }
+
+/** Update an annotation's text. */
+export function updateAnnotation(requestId, sk, text) {
+  return request(`/requests/${requestId}/annotations`, {
+    method: 'PUT',
+    body: JSON.stringify({ sk, text }),
+  });
+}
+
+/** Delete an annotation. */
+export function deleteAnnotation(requestId, sk) {
+  return request(`/requests/${requestId}/annotations`, {
+    method: 'DELETE',
+    body: JSON.stringify({ sk }),
+  });
+}

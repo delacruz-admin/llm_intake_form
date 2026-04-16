@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getRequest, updateRequest, addNote, getNotes, listAttachments, deleteRequest, addAnnotation, getAnnotations } from '../api/client';
+import { getRequest, updateRequest, addNote, getNotes, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
@@ -51,7 +51,7 @@ function Field({ label, value }) {
   );
 }
 
-function Section({ label, fields, annotations, onAddAnnotation }) {
+function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation, onDeleteAnnotation }) {
   const filled = fields.filter(([, val]) => val && val !== '—');
   if (filled.length === 0) return null;
   return (
@@ -69,6 +69,8 @@ function Section({ label, fields, annotations, onAddAnnotation }) {
               value={val}
               annotations={fieldAnnotations}
               onAdd={onAddAnnotation}
+              onEdit={onEditAnnotation}
+              onDelete={onDeleteAnnotation}
             />
           );
         })}
@@ -77,15 +79,34 @@ function Section({ label, fields, annotations, onAddAnnotation }) {
   );
 }
 
-function AnnotatedField({ label, fieldKey, value, annotations, onAdd }) {
+function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
 
   function handleSubmit() {
     if (!text.trim()) return;
     onAdd(fieldKey, text.trim());
     setText('');
     setOpen(false);
+  }
+
+  function startEdit(a) {
+    setEditingId(a.annotation_id);
+    setEditText(a.text);
+  }
+
+  function handleSaveEdit(a) {
+    if (!editText.trim()) return;
+    onEdit(a.sk, editText.trim());
+    setEditingId(null);
+    setEditText('');
+  }
+
+  function handleDeleteAnnotation(a) {
+    if (!window.confirm('Delete this annotation?')) return;
+    onDelete(a.sk);
   }
 
   return (
@@ -113,9 +134,35 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd }) {
         <div className="ml-0 mt-1.5 flex flex-col gap-1">
           {annotations.map((a) => (
             <div key={a.annotation_id} className="bg-amber-50 border border-amber-200 rounded-cooley px-3 py-1.5 text-[0.75rem]">
-              <span className="font-mono text-[0.6rem] font-semibold text-amber-700">{a.author}</span>
-              <span className="font-mono text-[0.6rem] text-amber-500 ml-2">{formatDate(a.created_at)}</span>
-              <div className="text-amber-900 mt-0.5">{a.text}</div>
+              {editingId === a.annotation_id ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(a)}
+                    className="flex-1 bg-white border border-amber-300 rounded-cooley text-[0.75rem] py-1 px-2 focus:outline-none focus:border-amber-500"
+                    autoFocus
+                  />
+                  <button onClick={() => handleSaveEdit(a)} className="text-[0.65rem] font-semibold text-white bg-amber-500 rounded-cooley px-2 py-1 hover:bg-amber-600">Save</button>
+                  <button onClick={() => setEditingId(null)} className="text-[0.65rem] text-text-muted hover:text-text px-1">✕</button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-mono text-[0.6rem] font-semibold text-amber-700">{a.author}</span>
+                      <span className="font-mono text-[0.6rem] text-amber-500 ml-2">{formatDate(a.created_at)}</span>
+                      {a.edited_at && <span className="font-mono text-[0.55rem] text-amber-400 ml-1">(edited)</span>}
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => startEdit(a)} className="text-[0.6rem] text-amber-600 hover:text-amber-800 px-1" title="Edit">✎</button>
+                      <button onClick={() => handleDeleteAnnotation(a)} className="text-[0.6rem] text-red-400 hover:text-red-600 px-1" title="Delete">✕</button>
+                    </div>
+                  </div>
+                  <div className="text-amber-900 mt-0.5">{a.text}</div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -260,6 +307,24 @@ export default function TriagePage({ requestId, onNavigate }) {
     } catch (err) { showToast(`Error: ${err.message}`); }
   }
 
+  async function handleEditAnnotation(sk, text) {
+    try {
+      await updateAnnotation(requestId, sk, text);
+      const data = await getAnnotations(requestId);
+      setAnnotations(data.annotations || []);
+      showToast('Annotation updated');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  }
+
+  async function handleDeleteAnnotation(sk) {
+    try {
+      await deleteAnnotation(requestId, sk);
+      const data = await getAnnotations(requestId);
+      setAnnotations(data.annotations || []);
+      showToast('Annotation deleted');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  }
+
   async function handleDelete() {
     if (!window.confirm(`Delete ${requestId}? This cannot be undone.`)) return;
     setSaving(true);
@@ -315,7 +380,7 @@ export default function TriagePage({ requestId, onNavigate }) {
 
         {/* LEFT — Request Details (scrollable) */}
         <div className="overflow-y-scroll min-h-0 pr-2">
-          <Section label="Summary" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="Summary" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Status', <StatusBadge status={r.status} />],
             ['Criticality', r.criticality ? <CritBadge value={r.criticality} /> : null],
             ['Date Submitted', formatDate(r.created_at)],
@@ -324,7 +389,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Assigned To', r.assigned_to],
           ]} />
 
-          <Section label="A1 · Requestor Information" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="A1 · Requestor Information" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Submitter', r.submitter],
             ['Submitter Email', r.submitter_email],
             ['Initiative Team / Department', r.team],
@@ -333,7 +398,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Initiative Executive Sponsor', r.exec_sponsor],
           ]} />
 
-          <Section label="A2 · Request Details" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="A2 · Request Details" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Request Type', r.request_type],
             ['Application Type', r.app_type],
             ['Title', r.title],
@@ -341,7 +406,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Deliverables', r.deliverables],
           ]} />
 
-          <Section label="A3 · Business Context & Impact" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="A3 · Business Context & Impact" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Business Outcomes', r.business_outcomes],
             ['Business Criticality', r.criticality],
             ['Impact if Not Implemented', r.impact_if_not_done],
@@ -349,14 +414,14 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Anticipated Need Date', formatDate(r.need_date)],
           ]} />
 
-          <Section label="A4 · Dependencies" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="A4 · Dependencies" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Vendor Involved', r.vendor_involved],
             ['Vendor Name', r.vendor_name],
             ['System Dependencies', r.system_dependencies],
             ['Discovery Stakeholders', r.discovery_stakeholders],
           ]} />
 
-          <Section label="C1 · Environments" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="C1 · Environments" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Environments Needed', r.environments_needed],
             ['Hosting Preference', r.hosting_preference],
             ['New AWS Account', r.new_aws_account],
@@ -364,30 +429,30 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['AWS Region', r.aws_region],
           ]} />
 
-          <Section label="C2 · IAM" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="C2 · IAM" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['SSO Integration', r.sso_needed],
             ['Access Patterns', r.access_patterns],
           ]} />
 
-          <Section label="C3 · Architecture" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="C3 · Architecture" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Deployment Model', r.deployment_model],
             ['Compute Requirements', r.compute_needed],
             ['Database Requirements', r.database_needed],
             ['Storage Requirements', r.storage_needed],
           ]} />
 
-          <Section label="C4 · Network" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="C4 · Network" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Connectivity', r.connectivity_type],
             ['VPC Requirements', r.vpc_requirements],
           ]} />
 
-          <Section label="C5 · Security" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="C5 · Security" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Compliance Frameworks', r.compliance_frameworks],
             ['Data Classification', r.data_classification],
             ['Encryption', r.encryption_requirements],
           ]} />
 
-          <Section label="C6 · Comments" annotations={annotations} onAddAnnotation={handleAddAnnotation} fields={[
+          <Section label="C6 · Comments" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
             ['Additional Comments', r.additional_comments],
           ]} />
         </div>

@@ -41,6 +41,10 @@ def handler(event, context):
             return add_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/annotations"):
             return get_annotations(path_params["id"])
+        elif method == "PUT" and "id" in path_params and resource.endswith("/annotations"):
+            return update_annotation(path_params["id"], event)
+        elif method == "DELETE" and "id" in path_params and resource.endswith("/annotations"):
+            return delete_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params:
             return get_request(path_params["id"])
         elif method == "GET":
@@ -321,10 +325,47 @@ def get_annotations(request_id):
     annotations = []
     for item in response.get("Items", []):
         item.pop("PK", None)
-        item.pop("SK", None)
+        # Keep SK so frontend can reference it for edits/deletes
+        item["sk"] = item.pop("SK", "")
         annotations.append(item)
 
     return _response(200, {"annotations": annotations})
+
+
+def update_annotation(request_id, event):
+    """Update an existing annotation's text."""
+    body = json.loads(event.get("body", "{}"))
+    sk = body.get("sk", "").strip()
+    text = body.get("text", "").strip()
+
+    if not sk or not text:
+        return _response(400, {"error": "sk and text are required"})
+
+    now = datetime.utcnow().isoformat()
+    requests_table.update_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": sk},
+        UpdateExpression="SET #t = :t, edited_at = :e",
+        ExpressionAttributeNames={"#t": "text"},
+        ExpressionAttributeValues={":t": text, ":e": now},
+        ConditionExpression="attribute_exists(PK)",
+    )
+
+    return _response(200, {"message": "Annotation updated."})
+
+
+def delete_annotation(request_id, event):
+    """Delete a single annotation."""
+    body = json.loads(event.get("body", "{}"))
+    sk = body.get("sk", "").strip()
+
+    if not sk:
+        return _response(400, {"error": "sk is required"})
+
+    requests_table.delete_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": sk},
+    )
+
+    return _response(200, {"message": "Annotation deleted."})
 
 
 def delete_request(request_id):
