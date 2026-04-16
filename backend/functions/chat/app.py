@@ -192,10 +192,12 @@ def extract_fields_from_response(text: str) -> dict:
 
 
 def clean_response_text(text: str) -> str:
-    """Remove the <extracted_fields> block from the user-facing response."""
+    """Remove the <extracted_fields> block and any __INIT__ artifacts from the user-facing response."""
     import re
 
-    return re.sub(r"<extracted_fields>.*?</extracted_fields>", "", text, flags=re.DOTALL).strip()
+    text = re.sub(r"<extracted_fields>.*?</extracted_fields>", "", text, flags=re.DOTALL)
+    text = re.sub(r"__INIT__:?\s*", "", text)
+    return text.strip()
 
 
 def call_bedrock(messages: list, user_context: str = "") -> str:
