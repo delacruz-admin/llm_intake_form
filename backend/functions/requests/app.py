@@ -29,6 +29,10 @@ def handler(event, context):
         print(f"Handler: method={method}, resource={resource}, path_params={path_params}")
         if method == "POST" and resource == "/requests":
             return submit_request(event)
+        elif method == "PUT" and "id" in path_params and resource.endswith("/annotations"):
+            return update_annotation(path_params["id"], event)
+        elif method == "DELETE" and "id" in path_params and resource.endswith("/annotations"):
+            return delete_annotation(path_params["id"], event)
         elif method == "PUT" and "id" in path_params:
             return update_request(path_params["id"], event)
         elif method == "DELETE" and "id" in path_params:
@@ -41,10 +45,6 @@ def handler(event, context):
             return add_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/annotations"):
             return get_annotations(path_params["id"])
-        elif method == "PUT" and "id" in path_params and resource.endswith("/annotations"):
-            return update_annotation(path_params["id"], event)
-        elif method == "DELETE" and "id" in path_params and resource.endswith("/annotations"):
-            return delete_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params:
             return get_request(path_params["id"])
         elif method == "GET":
