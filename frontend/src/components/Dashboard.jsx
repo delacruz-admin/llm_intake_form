@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listRequests, updateRequest, addNote, getNotes } from '../api/client';
+import { listRequests, updateRequest, addNote, getNotes, listAttachments } from '../api/client';
 import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
@@ -56,6 +56,7 @@ function formatDate(d) {
 function TriageModal({ request, onClose, onUpdated }) {
   const user = getUser();
   const [notes, setNotes] = useState([]);
+  const [attachments, setAttachments] = useState([]);
   const [noteText, setNoteText] = useState('');
   const [assignedTo, setAssignedTo] = useState(request.assigned_to || '');
   const [promisedDate, setPromisedDate] = useState(request.promised_date || '');
@@ -64,12 +65,20 @@ function TriageModal({ request, onClose, onUpdated }) {
 
   useEffect(() => {
     loadNotes();
+    loadAttachments();
   }, []);
 
   async function loadNotes() {
     try {
       const data = await getNotes(request.request_id);
       setNotes(data.notes || []);
+    } catch { /* ignore */ }
+  }
+
+  async function loadAttachments() {
+    try {
+      const data = await listAttachments(request.request_id);
+      setAttachments(data.attachments || []);
     } catch { /* ignore */ }
   }
 
@@ -293,6 +302,28 @@ function TriageModal({ request, onClose, onUpdated }) {
               )}
             </div>
           </div>
+
+          {/* ── Attachments ─────────────────────────── */}
+          {attachments.length > 0 && (
+            <div className="border-t border-border pt-4">
+              <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Attachments</div>
+              <div className="flex flex-col gap-2">
+                {attachments.map((a) => (
+                  <div key={a.file_id} className="flex items-center gap-3 bg-surface-secondary border border-border rounded-cooley p-3">
+                    <span className="text-lg">📎</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[0.82rem] text-text font-medium truncate">{a.filename}</div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="font-mono text-[0.6rem] text-text-muted">{a.content_type}</span>
+                        <span className="font-mono text-[0.6rem] text-text-muted">{a.category}</span>
+                        <span className="font-mono text-[0.6rem] text-text-muted">{formatDate(a.uploaded_at)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Triage Notes ────────────────────────── */}
           <div className="border-t border-border pt-4">
