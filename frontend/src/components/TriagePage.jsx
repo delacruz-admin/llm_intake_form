@@ -51,14 +51,19 @@ function Field({ label, value }) {
   );
 }
 
-function Section({ label, children }) {
-  const filtered = children.filter(Boolean);
-  if (filtered.length === 0) return null;
+function Section({ label, fields }) {
+  const filled = fields.filter(([, val]) => val && val !== '—');
+  if (filled.length === 0) return null;
   return (
     <div className="mb-5">
       <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-cooley-red mb-2 font-mono">{label}</div>
       <div className="bg-white border border-border rounded-cooley p-4 flex flex-col gap-2.5">
-        {filtered}
+        {filled.map(([lbl, val]) => (
+          <div key={lbl}>
+            <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted mb-0.5">{lbl}</div>
+            <div className="text-[0.8rem] text-text-dim leading-relaxed">{val}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -215,81 +220,81 @@ export default function TriagePage({ requestId, onNavigate }) {
 
         {/* LEFT — Request Details */}
         <div>
-          <Section label="Summary">
-            <Field label="Status" value={<StatusBadge status={r.status} />} />
-            <Field label="Criticality" value={r.criticality ? <CritBadge value={r.criticality} /> : null} />
-            <Field label="Date Submitted" value={formatDate(r.created_at)} />
-            <Field label="Need Date" value={formatDate(r.need_date)} />
-            <Field label="Promised Date" value={formatDate(r.promised_date)} />
-            <Field label="Assigned To" value={r.assigned_to} />
-          </Section>
+          <Section label="Summary" fields={[
+            ['Status', <StatusBadge status={r.status} />],
+            ['Criticality', r.criticality ? <CritBadge value={r.criticality} /> : null],
+            ['Date Submitted', formatDate(r.created_at)],
+            ['Need Date', formatDate(r.need_date)],
+            ['Promised Date', formatDate(r.promised_date)],
+            ['Assigned To', r.assigned_to],
+          ]} />
 
-          <Section label="A1 · Requestor Information">
-            <Field label="Submitter" value={r.submitter} />
-            <Field label="Submitter Email" value={r.submitter_email} />
-            <Field label="Initiative Team / Department" value={r.team} />
-            <Field label="Initiative POC" value={r.poc_name} />
-            <Field label="Initiative POC Email" value={r.poc_email} />
-            <Field label="Initiative Executive Sponsor" value={r.exec_sponsor} />
-          </Section>
+          <Section label="A1 · Requestor Information" fields={[
+            ['Submitter', r.submitter],
+            ['Submitter Email', r.submitter_email],
+            ['Initiative Team / Department', r.team],
+            ['Initiative POC', r.poc_name],
+            ['Initiative POC Email', r.poc_email],
+            ['Initiative Executive Sponsor', r.exec_sponsor],
+          ]} />
 
-          <Section label="A2 · Request Details">
-            <Field label="Request Type" value={r.request_type} />
-            <Field label="Application Type" value={r.app_type} />
-            <Field label="Title" value={r.title} />
-            <Field label="Description" value={r.description} />
-            <Field label="Deliverables" value={r.deliverables} />
-          </Section>
+          <Section label="A2 · Request Details" fields={[
+            ['Request Type', r.request_type],
+            ['Application Type', r.app_type],
+            ['Title', r.title],
+            ['Description', r.description],
+            ['Deliverables', r.deliverables],
+          ]} />
 
-          <Section label="A3 · Business Context & Impact">
-            <Field label="Business Outcomes" value={r.business_outcomes} />
-            <Field label="Business Criticality" value={r.criticality} />
-            <Field label="Impact if Not Implemented" value={r.impact_if_not_done} />
-            <Field label="Scale of Impact" value={r.impact_scale} />
-            <Field label="Anticipated Need Date" value={formatDate(r.need_date)} />
-          </Section>
+          <Section label="A3 · Business Context & Impact" fields={[
+            ['Business Outcomes', r.business_outcomes],
+            ['Business Criticality', r.criticality],
+            ['Impact if Not Implemented', r.impact_if_not_done],
+            ['Scale of Impact', r.impact_scale],
+            ['Anticipated Need Date', formatDate(r.need_date)],
+          ]} />
 
-          <Section label="A4 · Dependencies">
-            <Field label="Vendor Involved" value={r.vendor_involved} />
-            <Field label="Vendor Name" value={r.vendor_name} />
-            <Field label="System Dependencies" value={r.system_dependencies} />
-            <Field label="Discovery Stakeholders" value={r.discovery_stakeholders} />
-          </Section>
+          <Section label="A4 · Dependencies" fields={[
+            ['Vendor Involved', r.vendor_involved],
+            ['Vendor Name', r.vendor_name],
+            ['System Dependencies', r.system_dependencies],
+            ['Discovery Stakeholders', r.discovery_stakeholders],
+          ]} />
 
-          <Section label="C1 · Environments">
-            <Field label="Environments Needed" value={r.environments_needed} />
-            <Field label="Hosting Preference" value={r.hosting_preference} />
-            <Field label="New AWS Account" value={r.new_aws_account} />
-            <Field label="AWS Account Name" value={r.aws_account_name} />
-            <Field label="AWS Region" value={r.aws_region} />
-          </Section>
+          <Section label="C1 · Environments" fields={[
+            ['Environments Needed', r.environments_needed],
+            ['Hosting Preference', r.hosting_preference],
+            ['New AWS Account', r.new_aws_account],
+            ['AWS Account Name', r.aws_account_name],
+            ['AWS Region', r.aws_region],
+          ]} />
 
-          <Section label="C2 · IAM">
-            <Field label="SSO Integration" value={r.sso_needed} />
-            <Field label="Access Patterns" value={r.access_patterns} />
-          </Section>
+          <Section label="C2 · IAM" fields={[
+            ['SSO Integration', r.sso_needed],
+            ['Access Patterns', r.access_patterns],
+          ]} />
 
-          <Section label="C3 · Architecture">
-            <Field label="Deployment Model" value={r.deployment_model} />
-            <Field label="Compute Requirements" value={r.compute_needed} />
-            <Field label="Database Requirements" value={r.database_needed} />
-            <Field label="Storage Requirements" value={r.storage_needed} />
-          </Section>
+          <Section label="C3 · Architecture" fields={[
+            ['Deployment Model', r.deployment_model],
+            ['Compute Requirements', r.compute_needed],
+            ['Database Requirements', r.database_needed],
+            ['Storage Requirements', r.storage_needed],
+          ]} />
 
-          <Section label="C4 · Network">
-            <Field label="Connectivity" value={r.connectivity_type} />
-            <Field label="VPC Requirements" value={r.vpc_requirements} />
-          </Section>
+          <Section label="C4 · Network" fields={[
+            ['Connectivity', r.connectivity_type],
+            ['VPC Requirements', r.vpc_requirements],
+          ]} />
 
-          <Section label="C5 · Security">
-            <Field label="Compliance Frameworks" value={r.compliance_frameworks} />
-            <Field label="Data Classification" value={r.data_classification} />
-            <Field label="Encryption" value={r.encryption_requirements} />
-          </Section>
+          <Section label="C5 · Security" fields={[
+            ['Compliance Frameworks', r.compliance_frameworks],
+            ['Data Classification', r.data_classification],
+            ['Encryption', r.encryption_requirements],
+          ]} />
 
-          <Section label="C6 · Comments">
-            <Field label="Additional Comments" value={r.additional_comments} />
-          </Section>
+          <Section label="C6 · Comments" fields={[
+            ['Additional Comments', r.additional_comments],
+          ]} />
         </div>
 
         {/* RIGHT — Triage Actions */}
