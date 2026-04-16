@@ -26,6 +26,7 @@ def handler(event, context):
     resource = event.get("resource", "")
 
     try:
+        print(f"Handler: method={method}, resource={resource}, path_params={path_params}")
         if method == "POST" and resource == "/requests":
             return submit_request(event)
         elif method == "PUT" and "id" in path_params:
@@ -115,6 +116,7 @@ def submit_request(event):
 
 def get_request(request_id):
     """Get a single request by ID."""
+    print(f"get_request called with id: '{request_id}'")
     result = requests_table.get_item(
         Key={"PK": f"REQUEST#{request_id}", "SK": "META"}
     )
