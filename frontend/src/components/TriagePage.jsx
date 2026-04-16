@@ -1,0 +1,466 @@
+import { useState, useEffect } from 'react';
+import { getRequest, updateRequest, addNote, getNotes, listAttachments, deleteRequest } from '../api/client';
+import { getUser } from '../auth';
+
+const STATUS_CONFIG = {
+  'received-pending': { label: 'Received, Pending Review', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
+  'under-review': { label: 'Under Review', dot: 'bg-orange-400', bg: 'bg-orange-50 border-orange-200 text-orange-800' },
+  'accepted-discovery': { label: 'Accepted - In Discovery', dot: 'bg-amber-400', bg: 'bg-amber-50 border-amber-300 text-amber-700' },
+  'in-backlog': { label: 'In Backlog', dot: 'bg-blue-400', bg: 'bg-blue-50 border-blue-200 text-blue-800' },
+  'active': { label: 'Active', dot: 'bg-blue-500', bg: 'bg-blue-50 border-blue-300 text-blue-800' },
+  'deferred': { label: 'Deferred', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-muted' },
+};
+
+const CRIT_CONFIG = {
+  Emergency: 'bg-red-100 border-red-300 text-red-800',
+  High: 'bg-amber-50 border-amber-300 text-amber-700',
+  Medium: 'bg-surface-tertiary border-border-strong text-text-dim',
+  Low: 'bg-green-50 border-green-300 text-green-800',
+};
+
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG['received-pending'];
+  return (
+    <span className={`inline-flex items-center gap-1.5 font-mono text-[0.62rem] px-2 py-0.5 rounded-sm border ${cfg.bg}`}>
+      <span className={`w-[5px] h-[5px] rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function CritBadge({ value }) {
+  return (
+    <span className={`inline-flex items-center font-mono text-[0.62rem] font-semibold px-2 py-0.5 rounded-sm border ${CRIT_CONFIG[value] || CRIT_CONFIG.Medium}`}>
+      {value}
+    </span>
+  );
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function Field({ label, value }) {
+  if (!value || value === '—') return null;
+  return (
+    <div>
+      <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted mb-0.5">{label}</div>
+      <div className="text-[0.8rem] text-text-dim leading-relaxed">{value}</div>
+    </div>
+  );
+}
+
+function Section({ label, children }) {
+  const filtered = children.filter(Boolean);
+  if (filtered.length === 0) return null;
+  return (
+    <div className="mb-5">
+      <div className="text-[0.6rem] font-semibold uppercase tracking-wider text-cooley-red mb-2 font-mono">{label}</div>
+      <div className="bg-white border border-border rounded-cooley p-4 flex flex-col gap-2.5">
+        {filtered}
+      </div>
+    </div>
+  );
+}
+
+export default function TriagePage({ requestId, onNavigate }) {
+  const user = getUser();
+  const [request, setRequest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState([]);
+  const [attachments, setAttachments] = useState([]);
+  const [noteText, setNoteText] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
+  const [promisedDate, setPromisedDate] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  useEffect(() => {
+    loadAll();
+  }, [requestId]);
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const [reqData, notesData, attachData] = await Promise.all([
+        getRequest(requestId),
+        getNotes(requestId),
+        listAttachments(requestId),
+      ]);
+      setRequest(reqData);
+      setAssignedTo(reqData.assigned_to || '');
+      setPromisedDate(reqData.promised_date || '');
+      setNotes(notesData.notes || []);
+      setAttachments(attachData.attachments || []);
+    } catch (err) {
+      showToast(`Error loading: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  }
+
+  async function handleStatusChange(newStatus) {
+    setSaving(true);
+    try {
+      await updateRequest(requestId, { status: newStatus });
+      showToast(`Status → ${STATUS_CONFIG[newStatus]?.label || newStatus}`);
+      await loadAll();
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function handleAssign() {
+    if (!assignedTo.trim()) return;
+    setSaving(true);
+    try {
+      await updateRequest(requestId, { assigned_to: assignedTo.trim() });
+      showToast(`Assigned to ${assignedTo.trim()}`);
+      await loadAll();
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function handleCritChange(crit) {
+    setSaving(true);
+    try {
+      await updateRequest(requestId, { criticality: crit });
+      showToast(`Criticality → ${crit}`);
+      await loadAll();
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function handlePromisedDate() {
+    if (!promisedDate) return;
+    setSaving(true);
+    try {
+      await updateRequest(requestId, { promised_date: promisedDate });
+      showToast(`Promised date set`);
+      await loadAll();
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function handleAddNote() {
+    if (!noteText.trim()) return;
+    setSaving(true);
+    try {
+      await addNote(requestId, noteText.trim(), user?.name || user?.email || 'Unknown');
+      setNoteText('');
+      const data = await getNotes(requestId);
+      setNotes(data.notes || []);
+      showToast('Note added');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm(`Delete ${requestId}? This cannot be undone.`)) return;
+    setSaving(true);
+    try {
+      await deleteRequest(requestId);
+      onNavigate('dashboard');
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-surface-secondary">
+        <p className="text-text-muted font-mono text-sm">Loading request…</p>
+      </div>
+    );
+  }
+
+  if (!request) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-surface-secondary">
+        <p className="text-text-muted text-sm">Request not found.</p>
+      </div>
+    );
+  }
+
+  const r = request;
+
+  return (
+    <div className="flex-1 overflow-y-scroll bg-surface-secondary">
+      {/* Page Header */}
+      <div className="bg-white border-b border-border py-5">
+        <div className="max-w-[1380px] mx-auto px-8">
+          <button onClick={() => onNavigate('dashboard')} className="text-[0.72rem] text-cooley-red hover:underline mb-2 inline-block">← Back to Dashboard</button>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="font-mono text-[0.65rem] text-text-muted mb-1">{r.request_id}</div>
+              <div className="font-serif text-xl text-text">{r.title || '(Untitled)'}</div>
+              <div className="flex items-center gap-3 mt-2">
+                <StatusBadge status={r.status} />
+                {r.criticality && <CritBadge value={r.criticality} />}
+                <span className="font-mono text-[0.65rem] text-text-muted">Submitted {formatDate(r.created_at)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Two-column layout */}
+      <div className="max-w-[1380px] mx-auto px-8 py-6 grid grid-cols-[1fr_380px] gap-6">
+
+        {/* LEFT — Request Details */}
+        <div>
+          <Section label="Summary">
+            <Field label="Status" value={<StatusBadge status={r.status} />} />
+            <Field label="Criticality" value={r.criticality ? <CritBadge value={r.criticality} /> : null} />
+            <Field label="Date Submitted" value={formatDate(r.created_at)} />
+            <Field label="Need Date" value={formatDate(r.need_date)} />
+            <Field label="Promised Date" value={formatDate(r.promised_date)} />
+            <Field label="Assigned To" value={r.assigned_to} />
+          </Section>
+
+          <Section label="A1 · Requestor Information">
+            <Field label="Submitter" value={r.submitter} />
+            <Field label="Submitter Email" value={r.submitter_email} />
+            <Field label="Initiative Team / Department" value={r.team} />
+            <Field label="Initiative POC" value={r.poc_name} />
+            <Field label="Initiative POC Email" value={r.poc_email} />
+            <Field label="Initiative Executive Sponsor" value={r.exec_sponsor} />
+          </Section>
+
+          <Section label="A2 · Request Details">
+            <Field label="Request Type" value={r.request_type} />
+            <Field label="Application Type" value={r.app_type} />
+            <Field label="Title" value={r.title} />
+            <Field label="Description" value={r.description} />
+            <Field label="Deliverables" value={r.deliverables} />
+          </Section>
+
+          <Section label="A3 · Business Context & Impact">
+            <Field label="Business Outcomes" value={r.business_outcomes} />
+            <Field label="Business Criticality" value={r.criticality} />
+            <Field label="Impact if Not Implemented" value={r.impact_if_not_done} />
+            <Field label="Scale of Impact" value={r.impact_scale} />
+            <Field label="Anticipated Need Date" value={formatDate(r.need_date)} />
+          </Section>
+
+          <Section label="A4 · Dependencies">
+            <Field label="Vendor Involved" value={r.vendor_involved} />
+            <Field label="Vendor Name" value={r.vendor_name} />
+            <Field label="System Dependencies" value={r.system_dependencies} />
+            <Field label="Discovery Stakeholders" value={r.discovery_stakeholders} />
+          </Section>
+
+          <Section label="C1 · Environments">
+            <Field label="Environments Needed" value={r.environments_needed} />
+            <Field label="Hosting Preference" value={r.hosting_preference} />
+            <Field label="New AWS Account" value={r.new_aws_account} />
+            <Field label="AWS Account Name" value={r.aws_account_name} />
+            <Field label="AWS Region" value={r.aws_region} />
+          </Section>
+
+          <Section label="C2 · IAM">
+            <Field label="SSO Integration" value={r.sso_needed} />
+            <Field label="Access Patterns" value={r.access_patterns} />
+          </Section>
+
+          <Section label="C3 · Architecture">
+            <Field label="Deployment Model" value={r.deployment_model} />
+            <Field label="Compute Requirements" value={r.compute_needed} />
+            <Field label="Database Requirements" value={r.database_needed} />
+            <Field label="Storage Requirements" value={r.storage_needed} />
+          </Section>
+
+          <Section label="C4 · Network">
+            <Field label="Connectivity" value={r.connectivity_type} />
+            <Field label="VPC Requirements" value={r.vpc_requirements} />
+          </Section>
+
+          <Section label="C5 · Security">
+            <Field label="Compliance Frameworks" value={r.compliance_frameworks} />
+            <Field label="Data Classification" value={r.data_classification} />
+            <Field label="Encryption" value={r.encryption_requirements} />
+          </Section>
+
+          <Section label="C6 · Comments">
+            <Field label="Additional Comments" value={r.additional_comments} />
+          </Section>
+        </div>
+
+        {/* RIGHT — Triage Actions */}
+        <div>
+          {/* Status */}
+          <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Status</div>
+            <div className="flex flex-col gap-1.5">
+              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                const isCurrent = r.status === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => !isCurrent && handleStatusChange(key)}
+                    disabled={saving || isCurrent}
+                    className={`text-[0.72rem] font-semibold px-3 py-2 rounded-cooley border text-left transition-colors ${
+                      isCurrent
+                        ? 'bg-cooley-red text-white border-cooley-red'
+                        : 'text-text-dim bg-white border-border hover:border-cooley-red hover:text-cooley-red disabled:opacity-50'
+                    }`}
+                  >
+                    {cfg.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Assign To */}
+          <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Assign To</div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                placeholder="e.g., J. Patel"
+                className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-1.5 px-3 focus:outline-none focus:border-cooley-red"
+              />
+              <button
+                onClick={handleAssign}
+                disabled={saving || !assignedTo.trim()}
+                className="text-[0.72rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-1.5 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+              >
+                Set
+              </button>
+            </div>
+            {r.assigned_to && <div className="text-[0.68rem] text-text-muted mt-1.5 font-mono">Current: {r.assigned_to}</div>}
+          </div>
+
+          {/* Criticality */}
+          <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Criticality</div>
+            <div className="flex gap-2 flex-wrap">
+              {['Emergency', 'High', 'Medium', 'Low'].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => handleCritChange(c)}
+                  disabled={saving || r.criticality === c}
+                  className={`text-[0.68rem] font-semibold px-3 py-1.5 rounded-cooley border transition-colors ${
+                    r.criticality === c
+                      ? 'bg-cooley-red text-white border-cooley-red'
+                      : `disabled:opacity-30 ${CRIT_CONFIG[c]}`
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Promised Date */}
+          <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Promised Date</div>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={promisedDate}
+                onChange={(e) => setPromisedDate(e.target.value)}
+                className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-1.5 px-3 focus:outline-none focus:border-cooley-red"
+              />
+              <button
+                onClick={handlePromisedDate}
+                disabled={saving || !promisedDate}
+                className="text-[0.72rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-1.5 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+              >
+                Set
+              </button>
+            </div>
+            {r.promised_date && <div className="text-[0.68rem] text-text-muted mt-1.5 font-mono">Current: {formatDate(r.promised_date)}</div>}
+          </div>
+
+          {/* Attachments */}
+          {attachments.length > 0 && (
+            <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+              <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Attachments</div>
+              <div className="flex flex-col gap-2">
+                {attachments.map((a) => (
+                  <div key={a.file_id} className="flex items-center gap-2 bg-surface-secondary border border-border rounded-cooley p-2.5">
+                    <span>📎</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[0.78rem] text-text font-medium truncate">{a.filename}</div>
+                      <div className="font-mono text-[0.6rem] text-text-muted">{a.category} · {formatDate(a.uploaded_at)}</div>
+                    </div>
+                    {a.download_url ? (
+                      <a href={a.download_url} target="_blank" rel="noopener noreferrer"
+                        className="text-[0.65rem] font-semibold text-cooley-red bg-cooley-red-light border border-cooley-red-mid rounded-cooley px-2 py-1 hover:bg-cooley-red hover:text-white transition-colors no-underline shrink-0">
+                        Download
+                      </a>
+                    ) : <span className="text-[0.65rem] text-text-muted italic">No file</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Triage Notes</div>
+            <div className="flex gap-2 mb-3">
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add an internal note…"
+                rows={2}
+                className="flex-1 bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-2 px-3 resize-none focus:outline-none focus:border-cooley-red"
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={saving || !noteText.trim()}
+                className="self-end text-[0.72rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-2 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+            {notes.length === 0 ? (
+              <div className="text-[0.78rem] text-text-muted italic">No notes yet.</div>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+                {notes.map((n) => (
+                  <div key={n.note_id} className="bg-surface-secondary border border-border rounded-cooley p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-mono text-[0.65rem] font-semibold text-text-dim">{n.author}</span>
+                      <span className="font-mono text-[0.6rem] text-text-muted">{formatDate(n.created_at)}</span>
+                    </div>
+                    <div className="text-[0.8rem] text-text-dim leading-relaxed">{n.text}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Delete */}
+          <div className="bg-white border border-border rounded-cooley p-4">
+            <button
+              onClick={handleDelete}
+              disabled={saving}
+              className="text-[0.72rem] font-medium text-red-600 hover:text-white hover:bg-red-600 border border-red-300 rounded-cooley px-3 py-1.5 transition-colors disabled:opacity-50"
+            >
+              Delete Request
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 bg-white border border-border border-l-[3px] border-l-semantic-green rounded-cooley px-4 py-2.5 text-[0.76rem] text-text-dim flex items-center gap-2 shadow-lg z-50">
+          <span className="text-semantic-green">✓</span> {toast}
+        </div>
+      )}
+    </div>
+  );
+}
