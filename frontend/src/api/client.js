@@ -157,6 +157,35 @@ export function deleteRequest(requestId) {
   return request(`/requests/${requestId}`, { method: 'DELETE' });
 }
 
+/** Add an activity log entry. */
+export function addActivity(requestId, text, author, hours = null) {
+  return request(`/requests/${requestId}/activity`, {
+    method: 'POST',
+    body: JSON.stringify({ text, author, hours }),
+  });
+}
+
+/** Get all activity log entries. */
+export function getActivity(requestId) {
+  return request(`/requests/${requestId}/activity`);
+}
+
+/** Update an activity log entry. */
+export function updateActivity(requestId, sk, text, hours = null) {
+  return request(`/requests/${requestId}/activity`, {
+    method: 'PUT',
+    body: JSON.stringify({ sk, text, hours }),
+  });
+}
+
+/** Delete an activity log entry. */
+export function deleteActivity(requestId, sk) {
+  return request(`/requests/${requestId}/activity`, {
+    method: 'DELETE',
+    body: JSON.stringify({ sk }),
+  });
+}
+
 /** Add a field-level annotation. */
 export function addAnnotation(requestId, fieldName, text, author) {
   return request(`/requests/${requestId}/annotations`, {

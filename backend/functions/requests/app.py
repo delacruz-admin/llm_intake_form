@@ -51,6 +51,14 @@ def handler(event, context):
             return update_note(path_params["id"], event)
         elif method == "DELETE" and "id" in path_params and resource.endswith("/notes"):
             return delete_note(path_params["id"], event)
+        elif method == "POST" and "id" in path_params and resource.endswith("/activity"):
+            return add_activity(path_params["id"], event)
+        elif method == "GET" and "id" in path_params and resource.endswith("/activity"):
+            return get_activity(path_params["id"])
+        elif method == "PUT" and "id" in path_params and resource.endswith("/activity"):
+            return update_activity(path_params["id"], event)
+        elif method == "DELETE" and "id" in path_params and resource.endswith("/activity"):
+            return delete_activity(path_params["id"], event)
         elif method == "POST" and "id" in path_params and resource.endswith("/annotations"):
             return add_annotation(path_params["id"], event)
         elif method == "GET" and "id" in path_params and resource.endswith("/annotations"):
@@ -407,6 +415,100 @@ def delete_note(request_id, event):
     )
 
     return _response(200, {"message": "Note deleted."})
+
+
+def add_activity(request_id, event):
+    """Add an activity log entry."""
+    body = json.loads(event.get("body", "{}"))
+    text = body.get("text", "").strip()
+    author = body.get("author", "Unknown")
+    hours = body.get("hours", None)
+
+    if not text:
+        return _response(400, {"error": "text is required"})
+
+    now = datetime.utcnow().isoformat()
+    activity_id = uuid.uuid4().hex[:8]
+
+    item = {
+        "PK": f"REQUEST#{request_id}",
+        "SK": f"ACTIVITY#{now}#{activity_id}",
+        "activity_id": activity_id,
+        "text": text,
+        "author": author,
+        "created_at": now,
+    }
+    if hours is not None:
+        item["hours"] = str(hours)
+
+    requests_table.put_item(Item=item)
+
+    return _response(201, {"activity_id": activity_id, "message": "Activity logged."})
+
+
+def get_activity(request_id):
+    """Get all activity log entries for a request."""
+    response = requests_table.query(
+        KeyConditionExpression="PK = :pk AND begins_with(SK, :sk)",
+        ExpressionAttributeValues={
+            ":pk": f"REQUEST#{request_id}",
+            ":sk": "ACTIVITY#",
+        },
+        ScanIndexForward=False,
+    )
+
+    entries = []
+    for item in response.get("Items", []):
+        item.pop("PK", None)
+        item["sk"] = item.pop("SK", "")
+        entries.append(item)
+
+    return _response(200, {"activity": entries, "count": len(entries)})
+
+
+def update_activity(request_id, event):
+    """Update an activity log entry."""
+    body = json.loads(event.get("body", "{}"))
+    sk = body.get("sk", "").strip()
+    text = body.get("text", "").strip()
+    hours = body.get("hours", None)
+
+    if not sk or not text:
+        return _response(400, {"error": "sk and text are required"})
+
+    now = datetime.utcnow().isoformat()
+    update_expr = "SET #t = :t, edited_at = :e"
+    attr_names = {"#t": "text"}
+    attr_values = {":t": text, ":e": now}
+
+    if hours is not None:
+        update_expr += ", hours = :h"
+        attr_values[":h"] = str(hours)
+
+    requests_table.update_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": sk},
+        UpdateExpression=update_expr,
+        ExpressionAttributeNames=attr_names,
+        ExpressionAttributeValues=attr_values,
+        ConditionExpression="attribute_exists(PK)",
+    )
+
+    return _response(200, {"message": "Activity updated."})
+
+
+def delete_activity(request_id, event):
+    """Delete an activity log entry."""
+    body = json.loads(event.get("body", "{}"))
+    sk = body.get("sk", "").strip()
+
+    if not sk:
+        return _response(400, {"error": "sk is required"})
+
+    requests_table.delete_item(
+        Key={"PK": f"REQUEST#{request_id}", "SK": sk},
+    )
+
+    return _response(200, {"message": "Activity deleted."})
 
 
 def add_annotation(request_id, event):

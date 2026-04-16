@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, deleteAttachment, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary, reviewChat } from '../api/client';
+import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, deleteAttachment, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary, reviewChat, addActivity, getActivity, updateActivity, deleteActivity } from '../api/client';
 
 const STATUS_CONFIG = {
   'received-pending': { label: 'Received, Pending Review', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
@@ -308,6 +308,68 @@ function ReviewChat({ requestId }) {
   );
 }
 
+function ActivityCard({ entry, onEdit, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(entry.text);
+  const [editHours, setEditHours] = useState(entry.hours || '');
+
+  function handleSave() {
+    if (!editText.trim()) return;
+    onEdit(entry.sk, editText.trim(), editHours || null);
+    setEditing(false);
+  }
+
+  return (
+    <div className="bg-surface-secondary border border-border rounded-cooley p-3 group/activity">
+      {editing ? (
+        <div className="flex flex-col gap-2">
+          <textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            rows={2}
+            className="bg-white border border-border rounded-cooley text-[0.8rem] py-1.5 px-2.5 resize-none focus:outline-none focus:border-cooley-red"
+            autoFocus
+          />
+          <div className="flex gap-2 items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[0.6rem] text-text-muted">Hours:</span>
+              <input
+                type="number"
+                value={editHours}
+                onChange={(e) => setEditHours(e.target.value)}
+                placeholder="0"
+                step="0.5"
+                min="0"
+                className="w-16 bg-white border border-border rounded-cooley text-[0.75rem] py-0.5 px-1.5 focus:outline-none focus:border-cooley-red"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setEditing(false)} className="text-[0.65rem] text-text-muted hover:text-text px-2 py-1">Cancel</button>
+              <button onClick={handleSave} className="text-[0.65rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-1 hover:bg-cooley-red-hover">Save</button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <span className="font-mono text-[0.65rem] font-semibold text-text-dim">{entry.author}</span>
+              <span className="font-mono text-[0.6rem] text-text-muted ml-2">{formatDate(entry.created_at)}</span>
+              {entry.hours && <span className="font-mono text-[0.58rem] text-blue-600 ml-2">{entry.hours}h</span>}
+              {entry.edited_at && <span className="font-mono text-[0.55rem] text-text-muted ml-1">(edited)</span>}
+            </div>
+            <div className="flex gap-1 opacity-0 group-hover/activity:opacity-100 transition-opacity">
+              <button onClick={() => setEditing(true)} className="text-[0.6rem] text-text-muted hover:text-cooley-red px-1" title="Edit">✎</button>
+              <button onClick={() => onDelete(entry.sk)} className="text-[0.6rem] text-text-muted hover:text-red-600 px-1" title="Delete">✕</button>
+            </div>
+          </div>
+          <div className="text-[0.8rem] text-text-dim leading-relaxed">{entry.text}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function NoteCard({ note, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(note.text);
@@ -361,6 +423,7 @@ export default function TriagePage({ requestId, onNavigate, user }) {
   const [notes, setNotes] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [annotations, setAnnotations] = useState([]);
+  const [activity, setActivity] = useState([]);
   const [summary, setSummary] = useState('');
   const [noteText, setNoteText] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
@@ -375,11 +438,12 @@ export default function TriagePage({ requestId, onNavigate, user }) {
   async function loadAll() {
     setLoading(true);
     try {
-      const [reqData, notesData, attachData, annotData] = await Promise.all([
+      const [reqData, notesData, attachData, annotData, activityData] = await Promise.all([
         getRequest(requestId),
         getNotes(requestId),
         listAttachments(requestId),
         getAnnotations(requestId),
+        getActivity(requestId),
       ]);
       setRequest(reqData);
       setAssignedTo(reqData.assigned_to || '');
@@ -387,6 +451,7 @@ export default function TriagePage({ requestId, onNavigate, user }) {
       setNotes(notesData.notes || []);
       setAttachments(attachData.attachments || []);
       setAnnotations(annotData.annotations || []);
+      setActivity(activityData.activity || []);
 
       // Load summary in background (non-blocking)
       getRequestSummary(requestId)
@@ -502,6 +567,42 @@ export default function TriagePage({ requestId, onNavigate, user }) {
       const data = await getAnnotations(requestId);
       setAnnotations(data.annotations || []);
       showToast('Annotation deleted');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  }
+
+  const [activityText, setActivityText] = useState('');
+  const [activityHours, setActivityHours] = useState('');
+
+  async function handleAddActivity() {
+    if (!activityText.trim()) return;
+    setSaving(true);
+    try {
+      await addActivity(requestId, activityText.trim(), user?.name || user?.email || 'Unknown', activityHours || null);
+      setActivityText('');
+      setActivityHours('');
+      const data = await getActivity(requestId);
+      setActivity(data.activity || []);
+      showToast('Activity logged');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+    finally { setSaving(false); }
+  }
+
+  async function handleEditActivity(sk, text, hours) {
+    try {
+      await updateActivity(requestId, sk, text, hours);
+      const data = await getActivity(requestId);
+      setActivity(data.activity || []);
+      showToast('Activity updated');
+    } catch (err) { showToast(`Error: ${err.message}`); }
+  }
+
+  async function handleDeleteActivity(sk) {
+    if (!window.confirm('Delete this activity entry?')) return;
+    try {
+      await deleteActivity(requestId, sk);
+      const data = await getActivity(requestId);
+      setActivity(data.activity || []);
+      showToast('Activity deleted');
     } catch (err) { showToast(`Error: ${err.message}`); }
   }
 
@@ -805,6 +906,55 @@ export default function TriagePage({ requestId, onNavigate, user }) {
                 {notes.map((n) => (
                   <NoteCard key={n.note_id} note={n} onEdit={handleEditNote} onDelete={handleDeleteNote} />
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Activity Log */}
+          <div className="bg-white border border-border rounded-cooley p-4 mb-4">
+            <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Activity Log</div>
+            <div className="flex flex-col gap-2 mb-3">
+              <textarea
+                value={activityText}
+                onChange={(e) => setActivityText(e.target.value)}
+                placeholder="Log progress, decisions, or outcomes…"
+                rows={2}
+                className="bg-surface-secondary border border-border rounded-cooley text-[0.82rem] py-2 px-3 resize-none focus:outline-none focus:border-cooley-red"
+              />
+              <div className="flex gap-2 items-center">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[0.6rem] text-text-muted font-mono">Hours:</span>
+                  <input
+                    type="number"
+                    value={activityHours}
+                    onChange={(e) => setActivityHours(e.target.value)}
+                    placeholder="0"
+                    step="0.5"
+                    min="0"
+                    className="w-16 bg-surface-secondary border border-border rounded-cooley text-[0.75rem] py-1 px-1.5 focus:outline-none focus:border-cooley-red"
+                  />
+                </div>
+                <button
+                  onClick={handleAddActivity}
+                  disabled={saving || !activityText.trim()}
+                  className="ml-auto text-[0.72rem] font-semibold text-white bg-cooley-red rounded-cooley px-3 py-1.5 hover:bg-cooley-red-hover transition-colors disabled:opacity-50"
+                >
+                  Log
+                </button>
+              </div>
+            </div>
+            {activity.length === 0 ? (
+              <div className="text-[0.78rem] text-text-muted italic">No activity logged yet.</div>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+                {activity.map((e) => (
+                  <ActivityCard key={e.activity_id} entry={e} onEdit={handleEditActivity} onDelete={handleDeleteActivity} />
+                ))}
+                {activity.some((e) => e.hours) && (
+                  <div className="text-[0.68rem] font-mono text-text-muted border-t border-border pt-2 mt-1">
+                    Total: {activity.reduce((sum, e) => sum + (parseFloat(e.hours) || 0), 0).toFixed(1)} hours
+                  </div>
+                )}
               </div>
             )}
           </div>
