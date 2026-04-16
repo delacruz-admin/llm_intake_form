@@ -119,6 +119,56 @@ function CriticalityPill({ value }) {
   );
 }
 
+function CollapsibleSection({ section, fields, complete, active, isOptional, hasData, filledCount }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div
+      className={`bg-white border border-border rounded-cooley overflow-hidden transition-colors shrink-0 ${
+        complete ? 'border-l-[3px] border-l-semantic-green' : active ? 'border-l-[3px] border-l-cooley-red' : ''
+      }`}
+    >
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="w-full flex items-center gap-2 px-3 py-2 bg-surface-secondary border-b border-border hover:bg-surface-tertiary transition-colors text-left"
+      >
+        <span className={`text-[0.5rem] text-text-muted transition-transform ${collapsed ? '-rotate-90' : ''}`}>▼</span>
+        <span className="text-[0.76rem]">{section.icon}</span>
+        <span className="text-[0.63rem] font-semibold uppercase tracking-wider text-text-dim flex-1 font-mono">
+          {section.label}
+        </span>
+        {filledCount > 0 && (
+          <span className="text-[0.55rem] font-mono text-text-muted">{filledCount}/{section.fields.length}</span>
+        )}
+        {isOptional && (
+          <span className="text-[0.55rem] font-mono text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded-sm border border-border">OPT</span>
+        )}
+        {complete && (
+          <span className="text-[0.63rem] font-semibold text-semantic-green">✓</span>
+        )}
+      </button>
+      {!collapsed && (
+        <div className="px-3 py-2.5 flex flex-col gap-1.5">
+          {section.fields.map((f) => (
+            <div key={f.key}>
+              <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted leading-tight">
+                {f.label}
+              </div>
+              <div className={`text-[0.78rem] min-h-[16px] ${fields[f.key] ? 'text-text' : 'text-text-muted italic'}`}>
+                {f.key === 'criticality' && fields[f.key] ? (
+                  <CriticalityPill value={fields[f.key]} />
+                ) : (
+                  fields[f.key] || '—'
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PreviewPanel({ fields, sessionId }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(null);
@@ -158,11 +208,6 @@ export default function PreviewPanel({ fields, sessionId }) {
     }
   }
 
-  // Only show sections that have data or are Part A (always visible)
-  const visibleSections = SECTIONS.filter(
-    (s) => s.id.startsWith('A') || hasAnyData(s)
-  );
-
   return (
     <div className="flex-1 flex flex-col bg-surface-secondary overflow-hidden">
       {/* Header */}
@@ -190,46 +235,23 @@ export default function PreviewPanel({ fields, sessionId }) {
 
       {/* Sections */}
       <div className="flex-1 overflow-y-scroll p-3.5 flex flex-col gap-2.5 min-h-0">
-        {visibleSections.map((section) => {
+        {SECTIONS.map((section) => {
           const complete = isSectionComplete(section);
           const active = isSectionActive(section);
           const isOptional = section.id.startsWith('B') || section.id.startsWith('C');
+          const hasData = hasAnyData(section);
+          const filledCount = section.fields.filter((f) => fields[f.key]).length;
           return (
-            <div
+            <CollapsibleSection
               key={section.id}
-              className={`bg-white border border-border rounded-cooley overflow-hidden transition-colors shrink-0 ${
-                complete ? 'border-l-[3px] border-l-semantic-green' : active ? 'border-l-[3px] border-l-cooley-red' : ''
-              }`}
-            >
-              <div className="flex items-center gap-2 px-3 py-2 bg-surface-secondary border-b border-border">
-                <span className="text-[0.76rem]">{section.icon}</span>
-                <span className="text-[0.63rem] font-semibold uppercase tracking-wider text-text-dim flex-1 font-mono">
-                  {section.label}
-                </span>
-                {isOptional && (
-                  <span className="text-[0.55rem] font-mono text-text-muted bg-surface-tertiary px-1.5 py-0.5 rounded-sm border border-border">OPT</span>
-                )}
-                {complete && (
-                  <span className="text-[0.63rem] font-semibold text-semantic-green">✓</span>
-                )}
-              </div>
-              <div className="px-3 py-2.5 flex flex-col gap-1.5">
-                {section.fields.map((f) => (
-                  <div key={f.key}>
-                    <div className="text-[0.58rem] font-semibold uppercase tracking-wider text-text-muted leading-tight">
-                      {f.label}
-                    </div>
-                    <div className={`text-[0.78rem] min-h-[16px] ${fields[f.key] ? 'text-text' : 'text-text-muted italic'}`}>
-                      {f.key === 'criticality' && fields[f.key] ? (
-                        <CriticalityPill value={fields[f.key]} />
-                      ) : (
-                        fields[f.key] || '—'
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+              section={section}
+              fields={fields}
+              complete={complete}
+              active={active}
+              isOptional={isOptional}
+              hasData={hasData}
+              filledCount={filledCount}
+            />
           );
         })}
       </div>
