@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { getRequest, updateRequest, addNote, getNotes, updateNote, deleteNote, listAttachments, deleteRequest, addAnnotation, getAnnotations, updateAnnotation, deleteAnnotation, getRequestSummary, reviewChat } from '../api/client';
-import { getUser } from '../auth';
 
 const STATUS_CONFIG = {
   'received-pending': { label: 'Received, Pending Review', dot: 'bg-border-strong', bg: 'bg-surface-tertiary border-border-strong text-text-dim' },
@@ -58,7 +57,7 @@ function Field({ label, value }) {
   );
 }
 
-function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation, onDeleteAnnotation }) {
+function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation, onDeleteAnnotation, isReviewer }) {
   const [collapsed, setCollapsed] = useState(false);
   const filled = fields.filter(([, val]) => val && val !== '—');
   if (filled.length === 0) return null;
@@ -87,6 +86,7 @@ function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation
                 onAdd={onAddAnnotation}
                 onEdit={onEditAnnotation}
                 onDelete={onDeleteAnnotation}
+                isReviewer={isReviewer}
               />
             );
           })}
@@ -96,7 +96,7 @@ function Section({ label, fields, annotations, onAddAnnotation, onEditAnnotation
   );
 }
 
-function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, onDelete }) {
+function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, onDelete, isReviewer }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -172,8 +172,8 @@ function AnnotatedField({ label, fieldKey, value, annotations, onAdd, onEdit, on
                       {a.edited_at && <span className="font-mono text-[0.55rem] text-amber-400 ml-1">(edited)</span>}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover/annot:opacity-100 transition-opacity">
-                      <button onClick={() => startEdit(a)} className="text-[0.6rem] text-amber-600 hover:text-amber-800 px-1" title="Edit">✎</button>
-                      <button onClick={() => handleDeleteAnnotation(a)} className="text-[0.6rem] text-red-400 hover:text-red-600 px-1" title="Delete">✕</button>
+                      {isReviewer && <button onClick={() => startEdit(a)} className="text-[0.6rem] text-amber-600 hover:text-amber-800 px-1" title="Edit">✎</button>}
+                      {isReviewer && <button onClick={() => handleDeleteAnnotation(a)} className="text-[0.6rem] text-red-400 hover:text-red-600 px-1" title="Delete">✕</button>}
                     </div>
                   </div>
                   <div className="text-amber-900 mt-0.5">{a.text}</div>
@@ -354,8 +354,8 @@ function NoteCard({ note, onEdit, onDelete }) {
   );
 }
 
-export default function TriagePage({ requestId, onNavigate }) {
-  const user = getUser();
+export default function TriagePage({ requestId, onNavigate, user }) {
+  const isReviewer = user?.isReviewer;
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState([]);
@@ -560,7 +560,7 @@ export default function TriagePage({ requestId, onNavigate }) {
 
         {/* LEFT — Request Details (scrollable) */}
         <div className="overflow-y-scroll min-h-0 pr-2">
-          <Section label="Summary" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="Summary" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Status', <StatusBadge status={r.status} />],
             ['Criticality', r.criticality ? <CritBadge value={r.criticality} /> : null],
             ['Date Submitted', formatDate(r.created_at)],
@@ -570,7 +570,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['AI Summary', summary || <span className="text-text-muted italic text-[0.75rem]">Generating summary…</span>],
           ]} />
 
-          <Section label="A1 · Requestor Information" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="A1 · Requestor Information" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Submitter', r.submitter],
             ['Submitter Email', r.submitter_email],
             ['Initiative Team / Department', r.team],
@@ -579,7 +579,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Initiative Executive Sponsor', r.exec_sponsor],
           ]} />
 
-          <Section label="A2 · Request Details" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="A2 · Request Details" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Request Type', r.request_type],
             ['Application Type', r.app_type],
             ['Title', r.title],
@@ -587,7 +587,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Deliverables', r.deliverables],
           ]} />
 
-          <Section label="A3 · Business Context & Impact" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="A3 · Business Context & Impact" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Business Outcomes', r.business_outcomes],
             ['Business Criticality', r.criticality],
             ['Impact if Not Implemented', r.impact_if_not_done],
@@ -595,14 +595,14 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['Anticipated Need Date', formatDate(r.need_date)],
           ]} />
 
-          <Section label="A4 · Dependencies" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="A4 · Dependencies" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Vendor Involved', r.vendor_involved],
             ['Vendor Name', r.vendor_name],
             ['System Dependencies', r.system_dependencies],
             ['Discovery Stakeholders', r.discovery_stakeholders],
           ]} />
 
-          <Section label="C1 · Environments" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="C1 · Environments" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Environments Needed', r.environments_needed],
             ['Hosting Preference', r.hosting_preference],
             ['New AWS Account', r.new_aws_account],
@@ -610,37 +610,38 @@ export default function TriagePage({ requestId, onNavigate }) {
             ['AWS Region', r.aws_region],
           ]} />
 
-          <Section label="C2 · IAM" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="C2 · IAM" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['SSO Integration', r.sso_needed],
             ['Access Patterns', r.access_patterns],
           ]} />
 
-          <Section label="C3 · Architecture" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="C3 · Architecture" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Deployment Model', r.deployment_model],
             ['Compute Requirements', r.compute_needed],
             ['Database Requirements', r.database_needed],
             ['Storage Requirements', r.storage_needed],
           ]} />
 
-          <Section label="C4 · Network" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="C4 · Network" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Connectivity', r.connectivity_type],
             ['VPC Requirements', r.vpc_requirements],
           ]} />
 
-          <Section label="C5 · Security" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="C5 · Security" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Compliance Frameworks', r.compliance_frameworks],
             ['Data Classification', r.data_classification],
             ['Encryption', r.encryption_requirements],
           ]} />
 
-          <Section label="C6 · Comments" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} fields={[
+          <Section label="C6 · Comments" annotations={annotations} onAddAnnotation={handleAddAnnotation} onEditAnnotation={handleEditAnnotation} onDeleteAnnotation={handleDeleteAnnotation} isReviewer={isReviewer} fields={[
             ['Additional Comments', r.additional_comments],
           ]} />
         </div>
 
         {/* RIGHT — Triage Actions (scrollable) */}
         <div className="overflow-y-scroll min-h-0 pl-2">
-          {/* Status */}
+          {/* Status — reviewer only */}
+          {isReviewer && (
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Status</div>
             <div className="flex flex-col gap-1.5">
@@ -663,8 +664,10 @@ export default function TriagePage({ requestId, onNavigate }) {
               })}
             </div>
           </div>
+          )}
 
-          {/* Assign To */}
+          {/* Assign To — reviewer only */}
+          {isReviewer && (
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Assigned Technical Manager</div>
             <div className="flex gap-2">
@@ -685,8 +688,10 @@ export default function TriagePage({ requestId, onNavigate }) {
             </div>
             {r.assigned_to && <div className="text-[0.68rem] text-text-muted mt-1.5 font-mono">Current: {r.assigned_to}</div>}
           </div>
+          )}
 
-          {/* Criticality */}
+          {/* Criticality — reviewer only */}
+          {isReviewer && (
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Criticality</div>
             <div className="flex gap-2 flex-wrap">
@@ -706,8 +711,10 @@ export default function TriagePage({ requestId, onNavigate }) {
               ))}
             </div>
           </div>
+          )}
 
-          {/* Promised Date */}
+          {/* Promised Date — reviewer only */}
+          {isReviewer && (
           <div className="bg-white border border-border rounded-cooley p-4 mb-4">
             <div className="text-[0.63rem] font-semibold uppercase tracking-widest text-cooley-red mb-3">Promised Date</div>
             <div className="flex gap-2">
@@ -727,6 +734,7 @@ export default function TriagePage({ requestId, onNavigate }) {
             </div>
             {r.promised_date && <div className="text-[0.68rem] text-text-muted mt-1.5 font-mono">Current: {formatDate(r.promised_date)}</div>}
           </div>
+          )}
 
           {/* Attachments */}
           {attachments.length > 0 && (
@@ -785,7 +793,8 @@ export default function TriagePage({ requestId, onNavigate }) {
             )}
           </div>
 
-          {/* Delete */}
+          {/* Delete — reviewer only */}
+          {isReviewer && (
           <div className="bg-white border border-border rounded-cooley p-4">
             <button
               onClick={handleDelete}
@@ -795,6 +804,7 @@ export default function TriagePage({ requestId, onNavigate }) {
               Delete Request
             </button>
           </div>
+          )}
         </div>
       </div>
 

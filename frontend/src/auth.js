@@ -39,10 +39,13 @@ export function getUser() {
 
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
+    const groups = payload['cognito:groups'] || [];
     return {
       email: payload.email || '',
       name: payload.name || payload.email || '',
       sub: payload.sub,
+      groups,
+      isReviewer: groups.includes('arb-reviewers'),
     };
   } catch {
     return null;

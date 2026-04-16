@@ -40,7 +40,7 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard({ onNavigate, user }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,7 +61,11 @@ export default function Dashboard({ onNavigate }) {
     }
   }
 
+  const isReviewer = user?.isReviewer;
+
   const filtered = requests.filter((r) => {
+    // Submitters only see their own entries
+    if (!isReviewer && r.submitter_email && user?.email && r.submitter_email !== user.email) return false;
     if (statusFilter && r.status !== statusFilter) return false;
     if (search) {
       const hay = [r.request_id, r.title, r.team, r.poc_name, r.description].join(' ').toLowerCase();

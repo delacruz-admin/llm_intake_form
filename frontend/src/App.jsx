@@ -70,9 +70,9 @@ export default function App() {
     <div className="flex flex-col h-screen overflow-hidden">
       <Navbar user={user} onLogout={logout} page={page} onNavigate={navigate} />
       {page === 'triage' && triageRequestId ? (
-        <TriagePage requestId={triageRequestId} onNavigate={navigate} />
+        <TriagePage requestId={triageRequestId} onNavigate={navigate} user={user} />
       ) : page === 'dashboard' ? (
-        <Dashboard onNavigate={navigate} />
+        <Dashboard onNavigate={navigate} user={user} />
       ) : (
         <div className="flex flex-1 overflow-hidden">
           <ChatPanel
