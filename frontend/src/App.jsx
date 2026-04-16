@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getToken, handleCallback, requireAuth, getUser, logout } from './auth';
+import { getRequest } from './api/client';
 import Navbar from './components/Navbar';
 import ChatPanel from './components/ChatPanel';
 import PreviewPanel from './components/PreviewPanel';
@@ -14,6 +15,7 @@ export default function App() {
   const [fields, setFields] = useState({});
   const [messages, setMessages] = useState([]);
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
+  const [activeDraftId, setActiveDraftId] = useState(null);
 
   useEffect(() => {
     if (window.location.hash.includes('id_token')) {
@@ -50,10 +52,34 @@ export default function App() {
       setTriageRequestId(data);
       setPage('triage');
       window.history.pushState(null, '', `/triage/${data}`);
+    } else if (target === 'resume-draft' && data) {
+      resumeDraft(data);
     } else {
       setTriageRequestId(null);
       setPage(target);
       window.history.pushState(null, '', target === 'dashboard' ? '/dashboard' : '/');
+    }
+  }
+
+  async function resumeDraft(draftId) {
+    try {
+      const draft = await getRequest(draftId);
+      // Restore fields from the draft
+      const restoredFields = {};
+      const skipKeys = ['request_id', 'session_id', 'status', 'created_at', 'updated_at', 'PK', 'SK', 'GSI1PK', 'GSI1SK'];
+      for (const [k, v] of Object.entries(draft)) {
+        if (!skipKeys.includes(k) && v) {
+          restoredFields[k] = v;
+        }
+      }
+      setFields(restoredFields);
+      setSessionId(draft.session_id || '');
+      setActiveDraftId(draftId);
+      setMessages([]);
+      setPage('intake');
+      window.history.pushState(null, '', '/');
+    } catch (err) {
+      console.error('Failed to resume draft:', err);
     }
   }
 
@@ -87,7 +113,7 @@ export default function App() {
             user={user}
             onAttachmentUploaded={() => setAttachmentRefreshKey((k) => k + 1)}
           />
-          <PreviewPanel fields={fields} sessionId={sessionId} onFieldUpdate={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))} attachmentRefreshKey={attachmentRefreshKey} />
+          <PreviewPanel fields={fields} sessionId={sessionId} onFieldUpdate={(key, value) => setFields((prev) => ({ ...prev, [key]: value }))} attachmentRefreshKey={attachmentRefreshKey} draftId={activeDraftId} />
         </div>
       )}
     </div>

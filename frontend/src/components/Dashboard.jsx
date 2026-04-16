@@ -132,7 +132,7 @@ export default function Dashboard({ onNavigate, user }) {
             {myDrafts.map((d) => (
               <div
                 key={d.request_id}
-                onClick={() => onNavigate('triage', d.request_id)}
+                onClick={() => onNavigate('resume-draft', d.request_id)}
                 className="bg-white border border-border border-l-[3px] border-l-purple-400 rounded-cooley p-4 flex items-center gap-4 cursor-pointer hover:-translate-y-px hover:shadow transition-all"
               >
                 <div className="flex-1 min-w-0">
@@ -147,7 +147,7 @@ export default function Dashboard({ onNavigate, user }) {
                   <div className="text-[0.72rem] text-text-dim mt-0.5">{d.team || 'No team specified'} · Saved {formatDate(d.updated_at || d.created_at)}</div>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); onNavigate('triage', d.request_id); }}
+                  onClick={(e) => { e.stopPropagation(); onNavigate('resume-draft', d.request_id); }}
                   className="text-[0.68rem] font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-cooley px-3 py-1.5 hover:bg-purple-600 hover:text-white transition-colors shrink-0"
                 >
                   Continue
