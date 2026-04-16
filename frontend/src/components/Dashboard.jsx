@@ -88,6 +88,8 @@ export default function Dashboard({ onNavigate, user }) {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [sortKey, setSortKey] = useState('');
+  const [sortDir, setSortDir] = useState('asc');
 
   useEffect(() => { loadRequests(); }, []);
 
@@ -120,6 +122,25 @@ export default function Dashboard({ onNavigate, user }) {
     }
     return true;
   });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (!sortKey) return 0;
+    let av, bv;
+    if (sortKey === 'request_id') { av = a.request_id || ''; bv = b.request_id || ''; }
+    else if (sortKey === 'created_at') { av = a.created_at || ''; bv = b.created_at || ''; }
+    else if (sortKey === 'team') { av = (a.team || '').toLowerCase(); bv = (b.team || '').toLowerCase(); }
+    else return 0;
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  function toggleSort(key) {
+    if (sortKey === key) { setSortDir(sortDir === 'asc' ? 'desc' : 'asc'); }
+    else { setSortKey(key); setSortDir('asc'); }
+  }
+
+  const sortArrow = (key) => sortKey === key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
 
   const statCounts = {
     all: nonDrafts.length,
@@ -259,13 +280,22 @@ export default function Dashboard({ onNavigate, user }) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  {['ID', 'Submitted', 'Request', 'Team', 'Type', 'Criticality', 'Status', 'SLA', 'Need Date', 'Promised Date'].map((h) => (
+                  <th onClick={() => toggleSort('request_id')} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border cursor-pointer hover:text-cooley-red select-none">ID{sortArrow('request_id')}</th>
+                  <th onClick={() => toggleSort('created_at')} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border cursor-pointer hover:text-cooley-red select-none">Submitted{sortArrow('created_at')}</th>
+                  {['Request', 'Team'].map((h) =>
+                    h === 'Team' ? (
+                      <th key={h} onClick={() => toggleSort('team')} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border cursor-pointer hover:text-cooley-red select-none">{h}{sortArrow('team')}</th>
+                    ) : (
+                      <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
+                    )
+                  )}
+                  {['Type', 'Criticality', 'Status', 'SLA', 'Need Date', 'Promised Date'].map((h) => (
                     <th key={h} className="bg-surface-secondary py-2 px-4 text-left font-mono text-[0.62rem] uppercase tracking-wider text-text-muted border-b border-border">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
+                {sorted.map((r) => (
                   <tr key={r.request_id} className="border-b border-border/60 hover:bg-cooley-red-light cursor-pointer transition-colors" onClick={() => onNavigate('triage', r.request_id)}>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{r.request_id}</td>
                     <td className="py-2.5 px-4 font-mono text-[0.68rem] text-text-muted whitespace-nowrap">{formatDate(r.created_at)}</td>
