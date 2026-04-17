@@ -110,7 +110,7 @@ Every AWS resource that supports tags must be tagged. Tags enable cost allocatio
 | `Environment` | `var.environment` | `dev`, `staging`, `prod` | Deployment stage |
 | `ManagedBy` | Static | `terraform` | How the resource is managed |
 | `Owner` | `var.owner` | `technology-infrastructure` | Team responsible for the resource |
-| `CostCenter` | `var.cost_center` | `ti-arb` | Finance/chargeback allocation |
+| `CostCenter` | `var.cost_center` | `1511` | Finance/chargeback allocation |
 | `Application` | `var.application_name` | `ARB Intake System` | Human-readable product name |
 
 ### Implementation

@@ -43,7 +43,7 @@ variable "owner" {
 variable "cost_center" {
   description = "Cost center for billing allocation"
   type        = string
-  default     = "ti-arb"
+  default     = "1511"
 }
 
 variable "application_name" {
