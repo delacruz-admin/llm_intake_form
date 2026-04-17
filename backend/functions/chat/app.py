@@ -192,11 +192,12 @@ def extract_fields_from_response(text: str) -> dict:
 
 
 def clean_response_text(text: str) -> str:
-    """Remove the <extracted_fields> block and any __INIT__ artifacts from the user-facing response."""
+    """Remove the <extracted_fields> block and any ARB__*__ artifacts from the user-facing response."""
     import re
 
     text = re.sub(r"<extracted_fields>.*?</extracted_fields>", "", text, flags=re.DOTALL)
-    text = re.sub(r"__INIT__:?\s*", "", text)
+    text = re.sub(r"ARB__\w+__:?\s*", "", text)
+    text = re.sub(r"__\w+__:?\s*", "", text)
     return text.strip()
 
 
